@@ -1,0 +1,21 @@
+# Sensitive files
+.env
+.env.*
+*.pem
+*.key
+*_rsa
+*_ed25519
+credentials*
+secrets*
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Backup files
+*.bak
+*.backup
+*~
+
+# Local overrides (create these for machine-specific settings)
+zsh/.zshrc.local

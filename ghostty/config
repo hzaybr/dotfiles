@@ -1,0 +1,52 @@
+# This is the configuration file for Ghostty.
+#
+# This template file has been automatically created at the following
+# path since Ghostty couldn't find any existing config files on your system:
+#
+#   /Users/a122989/Library/Application Support/com.mitchellh.ghostty/config
+#
+# Run `ghostty +show-config --default --docs` to view a list of
+# all available config options and their default values.
+#
+# Additionally, each config option is also explained in detail
+# on Ghostty's website, at https://ghostty.org/docs/config.
+
+# ----- appearance -----
+# font-family = "RecMonoDuotone Nerd Font"
+font-family = "RecMonoLinear Nerd Font"
+font-family-bold = "RecMonoLinear Nerd Font"
+font-size = 16
+theme = Blue Berry Pie 
+theme = Blazer
+theme = Catppuccin Mocha
+theme = Cursor Dark
+theme = Vesper
+
+# ----- macOS-specific settings -----
+macos-titlebar-style = tabs
+macos-option-as-alt = true
+macos-icon = official
+
+# ----- Cursor & behavior -----
+cursor-style = block 
+cursor-style-blink = true 
+cursor-opacity = 0.3
+copy-on-select = clipboard
+link-url = true
+shell-integration-features = "no-cursor"
+
+# ----- key bindings -----
+keybind = ctrl+shift+d=new_split:right
+keybind = ctrl+shift+s=new_split:down
+keybind = ctrl+l=goto_split:right
+keybind = ctrl+h=goto_split:left
+keybind = ctrl+j=goto_split:down
+keybind = ctrl+k=goto_split:up
+keybind = ctrl+shift+comma=resize_split:left,10
+keybind = ctrl+shift+period=resize_split:right,10
+keybind = ctrl+shift+equal=equalize_splits
+keybind = ctrl+shift+semicolon=resize_split:down,10
+keybind = ctrl+shift+apostrophe=resize_split:up,10
+keybind = ctrl+shift+w=close_surface
+keybind = ctrl+shift+l=clear_screen
+
