@@ -8,6 +8,9 @@
 - Python: use `uv`, never `pip`
 - Node.js: prefer `bun`, then `pnpm`
 
+## Formatting
+- Never use tables in Markdown — use lists or headings instead (tables are hard to edit and read in terminal)
+
 ## Critical Rules
 - IMPORTANT: Never commit secrets, API keys, or .env files
 - Prefer running single tests over full test suite

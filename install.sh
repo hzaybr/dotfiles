@@ -6,6 +6,7 @@ set -e
 
 DOTFILES_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 BACKUP_DIR="$HOME/.dotfiles_backup/$(date +%Y%m%d_%H%M%S)"
+WORKSPACE_DIR="$HOME/git"
 
 # Colors
 RED='\033[0;31m'
@@ -89,6 +90,11 @@ if [ -d "$DOTFILES_DIR/claude" ]; then
         backup_and_link "$DOTFILES_DIR/claude/settings.json" "$CLAUDE_DIR/settings.json"
     fi
 
+    # statusline.sh
+    if [ -f "$DOTFILES_DIR/claude/statusline.sh" ]; then
+        backup_and_link "$DOTFILES_DIR/claude/statusline.sh" "$CLAUDE_DIR/statusline.sh"
+    fi
+
     # rules
     if [ -d "$DOTFILES_DIR/claude/rules" ]; then
         mkdir -p "$CLAUDE_DIR/rules"
@@ -115,6 +121,79 @@ if [ -d "$DOTFILES_DIR/claude" ]; then
             fi
         done
     fi
+
+    # agents
+    if [ -d "$DOTFILES_DIR/claude/agents" ]; then
+        mkdir -p "$CLAUDE_DIR/agents"
+        for file in "$DOTFILES_DIR/claude/agents"/*.md; do
+            [ -f "$file" ] && backup_and_link "$file" "$CLAUDE_DIR/agents/$(basename "$file")"
+        done
+    fi
+fi
+
+# Copilot CLI (symlinks to Claude source of truth)
+COPILOT_DIR="$HOME/.copilot"
+if [ -d "$DOTFILES_DIR/claude" ]; then
+    mkdir -p "$COPILOT_DIR/rules" "$COPILOT_DIR/skills"
+
+    # Core instructions
+    if [ -f "$DOTFILES_DIR/claude/CLAUDE.md" ]; then
+        backup_and_link "$DOTFILES_DIR/claude/CLAUDE.md" "$COPILOT_DIR/copilot-instructions.md"
+    fi
+
+    # Rules (.md -> .instructions.md)
+    if [ -d "$DOTFILES_DIR/claude/rules" ]; then
+        for file in "$DOTFILES_DIR/claude/rules"/*.md; do
+            [ -f "$file" ] || continue
+            name="$(basename "$file" .md)"
+            backup_and_link "$file" "$COPILOT_DIR/rules/$name.instructions.md"
+        done
+    fi
+
+    # Skills (SKILL.md -> skill-name.instructions.md)
+    if [ -d "$DOTFILES_DIR/claude/skills" ]; then
+        for skill_dir in "$DOTFILES_DIR/claude/skills"/*/; do
+            skill_name=$(basename "$skill_dir")
+            if [ -f "$skill_dir/SKILL.md" ]; then
+                backup_and_link "$skill_dir/SKILL.md" "$COPILOT_DIR/skills/$skill_name.instructions.md"
+            fi
+        done
+    fi
+
+    # Agents (merge multiple files into single AGENTS.md)
+    if [ -d "$DOTFILES_DIR/claude/agents" ]; then
+        agents_tmp=$(mktemp)
+        first=true
+        for file in "$DOTFILES_DIR/claude/agents"/*.md; do
+            [ -f "$file" ] || continue
+            if [ "$first" = true ]; then
+                first=false
+            else
+                echo "" >> "$agents_tmp"
+                echo "---" >> "$agents_tmp"
+                echo "" >> "$agents_tmp"
+            fi
+            cat "$file" >> "$agents_tmp"
+        done
+        if [ -e "$COPILOT_DIR/AGENTS.md" ] || [ -L "$COPILOT_DIR/AGENTS.md" ]; then
+            mkdir -p "$BACKUP_DIR"
+            mv "$COPILOT_DIR/AGENTS.md" "$BACKUP_DIR/"
+        fi
+        mv "$agents_tmp" "$COPILOT_DIR/AGENTS.md"
+        log_info "Generated $COPILOT_DIR/AGENTS.md from agents/*.md"
+    fi
+fi
+
+# Workspace config (~/git/)
+if [ -d "$DOTFILES_DIR/claude-workspace" ] && [ -d "$WORKSPACE_DIR" ]; then
+    # Claude workspace CLAUDE.md
+    if [ -f "$DOTFILES_DIR/claude-workspace/CLAUDE.md" ]; then
+        backup_and_link "$DOTFILES_DIR/claude-workspace/CLAUDE.md" "$WORKSPACE_DIR/CLAUDE.md"
+    fi
+
+    # Copilot workspace instructions (symlink to same CLAUDE.md)
+    mkdir -p "$WORKSPACE_DIR/.copilot"
+    backup_and_link "$DOTFILES_DIR/claude-workspace/CLAUDE.md" "$WORKSPACE_DIR/.copilot/copilot-instructions.md"
 fi
 
 echo ""
