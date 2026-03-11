@@ -1,24 +1,31 @@
 # Dotfiles
 
-Personal configuration files for zsh, tmux, ghostty, and Claude Code.
+Personal configuration files for zsh, tmux, git, ghostty, neovim, Claude Code, and GitHub Copilot CLI.
 
 ## Contents
 
 ```
 dotfiles/
 ├── zsh/
-│   └── .zshrc          # Zsh configuration (Zim framework + Powerlevel10k)
+│   └── .zshrc              # Zsh configuration (Zim framework + Powerlevel10k)
 ├── tmux/
-│   └── .tmux.conf      # Tmux configuration (screen-like + vim bindings)
+│   └── .tmux.conf          # Tmux configuration (screen-like + vim bindings)
+├── git/
+│   └── ignore              # Global gitignore
 ├── ghostty/
-│   └── config          # Ghostty terminal configuration
+│   └── config              # Ghostty terminal configuration
+├── nvim/                   # Neovim configuration (NvChad-based)
 ├── claude/
-│   ├── CLAUDE.md       # Global Claude Code instructions
-│   ├── settings.json   # Hooks and plugins
-│   ├── rules/          # Coding style and security rules
-│   ├── commands/       # Custom commands (tdd, plan, etc.)
-│   └── skills/         # Skill definitions
-├── install.sh          # Installation script
+│   ├── CLAUDE.md           # Global Claude Code instructions
+│   ├── settings.json       # Hooks and plugins
+│   ├── statusline.sh       # Status line script
+│   ├── rules/              # Coding style and security rules
+│   ├── commands/           # Custom commands (tdd, plan, etc.)
+│   ├── agents/             # Agent definitions
+│   └── skills/             # Skill definitions
+├── claude-workspace/
+│   └── CLAUDE.md           # Shared instructions for all ~/git/ projects
+├── install.sh              # Installation script
 └── README.md
 ```
 
@@ -35,6 +42,19 @@ The script will:
 
 1. Backup existing config files to `~/.dotfiles_backup/<timestamp>/`
 2. Create symbolic links to the dotfiles
+3. Generate GitHub Copilot CLI config from Claude Code settings (see below)
+
+## Claude Code → Copilot CLI
+
+`install.sh` uses Claude Code as the single source of truth, and automatically generates corresponding Copilot CLI config under `~/.copilot/`:
+
+- `claude/CLAUDE.md` → `~/.copilot/copilot-instructions.md`
+- `claude/rules/*.md` → `~/.copilot/rules/*.instructions.md`
+- `claude/skills/*/SKILL.md` → `~/.copilot/skills/*.instructions.md`
+- `claude/agents/*.md` → merged into `~/.copilot/AGENTS.md`
+- `claude-workspace/CLAUDE.md` → `~/git/.copilot/copilot-instructions.md`
+
+No separate Copilot config directory is needed — edit the `claude/` files and re-run `install.sh` to sync both tools.
 
 ## Dependencies
 
@@ -42,4 +62,6 @@ The script will:
 - [Powerlevel10k](https://github.com/romkatv/powerlevel10k) - Zsh theme
 - [TPM](https://github.com/tmux-plugins/tpm) - Tmux Plugin Manager
 - [Ghostty](https://ghostty.org/) - Terminal emulator
+- [Neovim](https://neovim.io/) - Text editor
 - [Claude Code](https://claude.ai/claude-code) - AI coding assistant
+- [GitHub Copilot CLI](https://docs.github.com/en/copilot/github-copilot-in-the-cli) - AI terminal assistant (optional)
