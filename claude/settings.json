@@ -9,6 +9,24 @@
             "command": "$HOME/.claude/hooks/pre-git-push.sh"
           }
         ]
+      },
+      {
+        "matcher": "Read|Glob|Grep",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "$HOME/.claude/hooks/pre-auto-allow-reads.sh"
+          }
+        ]
+      },
+      {
+        "matcher": "WebSearch|WebFetch",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "$HOME/.claude/hooks/pre-auto-allow-web.sh"
+          }
+        ]
       }
     ],
     "PostToolUse": [
@@ -54,6 +72,15 @@
           {
             "type": "command",
             "command": "$HOME/.claude/hooks/post-claude-migrate.sh"
+          }
+        ]
+      },
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "$HOME/.claude/hooks/post-notify-macos.sh"
           }
         ]
       }
