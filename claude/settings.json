@@ -71,6 +71,24 @@
         "hooks": [
           {
             "type": "command",
+            "command": "$HOME/.claude/hooks/post-stylua.sh"
+          }
+        ]
+      },
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "$HOME/.claude/hooks/post-shfmt.sh"
+          }
+        ]
+      },
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
             "command": "$HOME/.claude/hooks/post-claude-migrate.sh"
           }
         ]
