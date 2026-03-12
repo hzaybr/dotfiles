@@ -173,6 +173,17 @@ if [ -d "$DOTFILES_DIR/claude" ]; then
         done
     fi
 
+    # Hooks (Copilot-specific versions)
+    if [ -d "$DOTFILES_DIR/copilot/hooks" ]; then
+        mkdir -p "$COPILOT_DIR/hooks"
+        for file in "$DOTFILES_DIR/copilot/hooks"/*.sh; do
+            [ -f "$file" ] && backup_and_link "$file" "$COPILOT_DIR/hooks/$(basename "$file")"
+        done
+    fi
+    if [ -f "$DOTFILES_DIR/copilot/hooks.json" ]; then
+        backup_and_link "$DOTFILES_DIR/copilot/hooks.json" "$COPILOT_DIR/hooks/hooks.json"
+    fi
+
     # Agents (merge multiple files into single AGENTS.md)
     if [ -d "$DOTFILES_DIR/claude/agents" ]; then
         agents_tmp=$(mktemp)

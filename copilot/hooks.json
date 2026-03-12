@@ -1,0 +1,49 @@
+{
+  "version": 1,
+  "hooks": {
+    "preToolUse": [
+      {
+        "type": "command",
+        "bash": "$HOME/.copilot/hooks/pre-git-push.sh",
+        "comment": "Deny git push to prompt manual review"
+      },
+      {
+        "type": "command",
+        "bash": "$HOME/.copilot/hooks/pre-auto-allow-reads.sh",
+        "comment": "Auto-approve read-only operations (view, grep, glob)"
+      },
+      {
+        "type": "command",
+        "bash": "$HOME/.copilot/hooks/pre-auto-allow-web.sh",
+        "comment": "Auto-approve web search/fetch operations"
+      }
+    ],
+    "postToolUse": [
+      {
+        "type": "command",
+        "bash": "$HOME/.copilot/hooks/post-prettier.sh",
+        "comment": "Run prettier on JS/TS files"
+      },
+      {
+        "type": "command",
+        "bash": "$HOME/.copilot/hooks/post-tsc-check.sh",
+        "comment": "TypeScript type check"
+      },
+      {
+        "type": "command",
+        "bash": "$HOME/.copilot/hooks/post-console-log.sh",
+        "comment": "Detect console.log statements"
+      },
+      {
+        "type": "command",
+        "bash": "$HOME/.copilot/hooks/post-ruff.sh",
+        "comment": "Ruff format + lint on Python files"
+      },
+      {
+        "type": "command",
+        "bash": "$HOME/.copilot/hooks/post-notify-macos.sh",
+        "comment": "macOS notification when Bash commands complete"
+      }
+    ]
+  }
+}

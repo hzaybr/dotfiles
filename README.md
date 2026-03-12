@@ -24,6 +24,9 @@ dotfiles/
 │   ├── hooks/              # Pre/post tool-use hook scripts
 │   ├── agents/             # Agent definitions
 │   └── skills/             # Skill definitions
+├── copilot/
+│   ├── hooks.json          # Copilot hooks configuration
+│   └── hooks/              # Copilot-specific hook scripts
 ├── claude-workspace/
 │   └── CLAUDE.md           # Shared instructions for all ~/git/ projects
 ├── install.sh              # Installation script
@@ -69,6 +72,17 @@ The script is safe to re-run — it backs up any existing files before overwriti
 - `claude-workspace/CLAUDE.md` → `~/git/.copilot/copilot-instructions.md`
 
 No separate Copilot config directory is needed — edit the `claude/` files and re-run `install.sh` to sync both tools.
+
+### Hooks
+
+Hooks are **not** shared between Claude Code and Copilot CLI due to format differences:
+
+- Claude hooks live in `claude/hooks/` — use `hookSpecificOutput` for feedback to the agent
+- Copilot hooks live in `copilot/hooks/` — `postToolUse` output is ignored by Copilot, so warnings go to stderr only
+
+Both sets cover the same checks (prettier, tsc, console.log, ruff, git push guard). `install.sh` installs both to their respective locations.
+
+Copilot CLI loads global hooks from `~/.copilot/hooks/*.json`, so no per-repo setup is needed.
 
 ## Dependencies
 
