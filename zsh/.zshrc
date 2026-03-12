@@ -214,3 +214,6 @@ export PATH="$BUN_INSTALL/bin:$PATH"
 
 export ENABLE_LSP_TOOLS=1
 export PATH="$HOME/.local/zig:$PATH"
+
+# Copilot CLI - load global rules from rules directory
+export COPILOT_CUSTOM_INSTRUCTIONS_DIRS="$HOME/.copilot/rules"

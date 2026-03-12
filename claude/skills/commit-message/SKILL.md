@@ -20,10 +20,14 @@ Generate commit messages from staged changes using the Conventional Commits form
 ## Message Format
 
 ```
-type(scope): subject
+type: subject
 
 body (optional)
 ```
+
+**IMPORTANT:**
+- Do NOT use scope — always `type: subject`, never `type(scope): subject`
+- Do NOT append `Co-Authored-By` or any trailer lines
 
 ### Type
 
@@ -37,15 +41,6 @@ Choose the type that best describes the **intent** of the change, not just what 
 - **test** — adding or updating tests only
 - **chore** — build config, dependencies, tooling, CI — nothing the app user sees
 - **perf** — performance improvement without changing functionality
-
-### Scope
-
-Optional. Use when the change is clearly scoped to a specific module, component, or domain:
-
-- `feat(auth): add OAuth2 login flow`
-- `fix(api): handle null response from payment gateway`
-
-Skip the scope when the change is broad or doesn't belong to a clear module. A missing scope is better than a forced one.
 
 ### Subject
 
@@ -79,7 +74,7 @@ Typical cases that need a body:
 Leave a blank line between subject and body. Wrap lines at 72 characters.
 
 ```
-fix(auth): reject expired refresh tokens on rotation
+fix: reject expired refresh tokens on rotation
 
 - Expired refresh tokens were accepted during token rotation,
   allowing indefinite session extension
@@ -87,7 +82,7 @@ fix(auth): reject expired refresh tokens on rotation
 ```
 
 Cases that usually **don't** need a body:
-- `feat(ui): add dark mode toggle` (obvious)
+- `feat: add dark mode toggle` (obvious)
 - `fix: typo in error message` (self-explanatory)
 - `chore: bump vite to 6.1.0` (routine)
 
@@ -102,7 +97,7 @@ When reading the diff, focus on understanding **intent** rather than listing eve
 
 ## Presenting to the User
 
-Show the proposed commit message and ask for confirmation. If you're uncertain about the type or scope, say so and offer alternatives. For example:
+Show the proposed commit message and ask for confirmation. If you're uncertain about the type, say so and offer alternatives. For example:
 
 > This looks like it could be either `refactor` or `fix` — the code was reorganized but also corrects a subtle bug. Which feels more accurate?
 
