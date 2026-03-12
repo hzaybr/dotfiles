@@ -21,6 +21,7 @@ dotfiles/
 │   ├── statusline.sh       # Status line script
 │   ├── rules/              # Coding style and security rules
 │   ├── commands/           # Custom commands (tdd, plan, etc.)
+│   ├── hooks/              # Pre/post tool-use hook scripts
 │   ├── agents/             # Agent definitions
 │   └── skills/             # Skill definitions
 ├── claude-workspace/
@@ -28,6 +29,17 @@ dotfiles/
 ├── install.sh              # Installation script
 └── README.md
 ```
+
+## Prerequisites
+
+Before running `install.sh`:
+
+1. **Create the workspace directory** — the script expects the repo at `~/git/dotfiles`
+   ```bash
+   mkdir -p ~/git
+   ```
+
+2. **Install dependencies** — the script only creates symlinks; it does not install any tools. Install the ones you need from the list below before or after running the script.
 
 ## Installation
 
@@ -43,6 +55,8 @@ The script will:
 1. Backup existing config files to `~/.dotfiles_backup/<timestamp>/`
 2. Create symbolic links to the dotfiles
 3. Generate GitHub Copilot CLI config from Claude Code settings (see below)
+
+The script is safe to re-run — it backs up any existing files before overwriting.
 
 ## Claude Code → Copilot CLI
 

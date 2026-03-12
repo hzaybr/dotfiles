@@ -69,7 +69,12 @@ fi
 
 # Ghostty
 if [ -f "$DOTFILES_DIR/ghostty/config" ]; then
-    backup_and_link "$DOTFILES_DIR/ghostty/config" "$HOME/Library/Application Support/com.mitchellh.ghostty/config"
+    if [ "$(uname)" = "Darwin" ]; then
+        GHOSTTY_DIR="$HOME/Library/Application Support/com.mitchellh.ghostty"
+    else
+        GHOSTTY_DIR="${XDG_CONFIG_HOME:-$HOME/.config}/ghostty"
+    fi
+    backup_and_link "$DOTFILES_DIR/ghostty/config" "$GHOSTTY_DIR/config"
 fi
 
 # Neovim
@@ -119,6 +124,14 @@ if [ -d "$DOTFILES_DIR/claude" ]; then
             if [ -f "$skill_dir/SKILL.md" ]; then
                 backup_and_link "$skill_dir/SKILL.md" "$CLAUDE_DIR/skills/$skill_name/SKILL.md"
             fi
+        done
+    fi
+
+    # hooks
+    if [ -d "$DOTFILES_DIR/claude/hooks" ]; then
+        mkdir -p "$CLAUDE_DIR/hooks"
+        for file in "$DOTFILES_DIR/claude/hooks"/*.sh; do
+            [ -f "$file" ] && backup_and_link "$file" "$CLAUDE_DIR/hooks/$(basename "$file")"
         done
     fi
 
