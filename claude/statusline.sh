@@ -23,12 +23,19 @@ GIT_PLAIN=""
 if git rev-parse --git-dir >/dev/null 2>&1; then
   BRANCH=$(git branch --show-current 2>/dev/null)
   if [ -n "$BRANCH" ]; then
-    GIT_STATUS=""
-    if [ -n "$(git status --porcelain 2>/dev/null | head -1)" ]; then
-      GIT_STATUS="*"
-    fi
-    GIT_PLAIN=" ⎇ ${BRANCH}${GIT_STATUS}"
-    GIT_PART=" ${GREEN}⎇ ${BRANCH}${GIT_STATUS}${RESET}"
+    GIT_INDICATORS=""
+    STAGED=$(git diff --cached --numstat 2>/dev/null | wc -l | tr -d ' ')
+    UNSTAGED=$(git diff --numstat 2>/dev/null | wc -l | tr -d ' ')
+    UNTRACKED=$(git ls-files --others --exclude-standard 2>/dev/null | wc -l | tr -d ' ')
+    AHEAD=$(git rev-list --count @{upstream}..HEAD 2>/dev/null || echo 0)
+    BEHIND=$(git rev-list --count HEAD..@{upstream} 2>/dev/null || echo 0)
+    [ "$BEHIND" -gt 0 ] 2>/dev/null && GIT_INDICATORS+=" ⇣${BEHIND}"
+    [ "$AHEAD" -gt 0 ] 2>/dev/null && GIT_INDICATORS+=" ⇡${AHEAD}"
+    [ "$STAGED" -gt 0 ] 2>/dev/null && GIT_INDICATORS+=" +${STAGED}"
+    [ "$UNSTAGED" -gt 0 ] 2>/dev/null && GIT_INDICATORS+=" !${UNSTAGED}"
+    [ "$UNTRACKED" -gt 0 ] 2>/dev/null && GIT_INDICATORS+=" ?${UNTRACKED}"
+    GIT_PLAIN=" ⎇ ${BRANCH}${GIT_INDICATORS}"
+    GIT_PART=" ${GREEN}⎇ ${BRANCH}${YELLOW}${GIT_INDICATORS}${RESET}"
   fi
 fi
 
