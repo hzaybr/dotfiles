@@ -4,8 +4,11 @@
 INPUT=$(cat)
 CMD=$(echo "$INPUT" | jq -r '.tool_input.command // ""')
 
+# Strip safe redirections (2>&1, >&2, 2>/dev/null) before checking for writes
+STRIPPED=$(echo "$CMD" | sed -E 's/2>&1//g; s/>&2//g; s/2>\/dev\/null//g')
+
 if echo "$CMD" | grep -qE '^\s*(ls|pwd|which|type|file|wc|du|df|uname|whoami|id|env|printenv|echo)\b' &&
-	! echo "$CMD" | grep -qE '[>|]|tee\b'; then
+	! echo "$STRIPPED" | grep -qE '[>|]|\btee\b'; then
 	jq -n '{
     hookSpecificOutput: {
       hookEventName: "PreToolUse",
