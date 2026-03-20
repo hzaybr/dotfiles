@@ -1,6 +1,8 @@
 #!/bin/bash
 # PostToolUse hook: macOS desktop notification when Bash commands complete
-# Only notifies when the terminal is NOT in the foreground.
+# Shows working directory so you know which session finished.
+# Also saves the Ghostty window title while terminal is in foreground,
+# so the notification hook can find the correct window later.
 # Skips trivial read-only commands to avoid notification fatigue.
 
 INPUT=$(cat)
@@ -16,11 +18,26 @@ if echo "$CMD" | grep -qE '^\s*(ls|pwd|which|type|file|wc|du|df|uname|whoami|id|
 	exit 0
 fi
 
-# Check if terminal is in the foreground — skip if user is already watching
+# Parse context
+CWD=$(echo "$INPUT" | jq -r '.cwd // empty')
+SESSION_ID=$(echo "$INPUT" | jq -r '.session_id // empty')
+DIR_NAME=$(basename "${CWD:-unknown}" 2>/dev/null)
+
+# Check if terminal is in the foreground
 FRONT_APP=$(osascript -e 'tell application "System Events" to get name of first process whose frontmost is true' 2>/dev/null)
 
 case "$FRONT_APP" in
-Terminal | iTerm2 | WezTerm | Alacritty | kitty | Ghostty | ghostty)
+Ghostty | ghostty)
+	# Terminal is in foreground — save the current window title for later use
+	# by the notification hook (which fires when terminal is NOT in foreground)
+	if [ -n "$SESSION_ID" ]; then
+		osascript -e 'tell application "System Events" to tell process "ghostty" to get name of front window' \
+			2>/dev/null >"/tmp/claude-ghostty-${SESSION_ID}"
+	fi
+	echo "$INPUT"
+	exit 0
+	;;
+Terminal | iTerm2 | WezTerm | Alacritty | kitty)
 	echo "$INPUT"
 	exit 0
 	;;
@@ -32,11 +49,23 @@ if [ ${#SHORT_CMD} -gt 80 ]; then
 	SHORT_CMD="${SHORT_CMD:0:77}..."
 fi
 
-# Send macOS notification
-osascript - "$SHORT_CMD" <<'APPLESCRIPT' 2>/dev/null
+if command -v terminal-notifier &>/dev/null; then
+	terminal-notifier \
+		-title "Claude Code" \
+		-subtitle "📁 $DIR_NAME" \
+		-message "✅ $SHORT_CMD" \
+		-sound "" \
+		-group "claude-${SESSION_ID:-default}" \
+		-activate "com.mitchellh.ghostty" \
+		2>/dev/null &
+else
+	osascript - "$DIR_NAME" "$SHORT_CMD" <<'APPLESCRIPT' 2>/dev/null
 on run argv
-  display notification "Command completed" with title "Claude Code" subtitle (item 1 of argv)
+  set dirName to item 1 of argv
+  set cmd to item 2 of argv
+  display notification ("✅ " & cmd) with title "Claude Code" subtitle ("📁 " & dirName)
 end run
 APPLESCRIPT
+fi
 
 echo "$INPUT"
