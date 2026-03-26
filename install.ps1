@@ -165,8 +165,8 @@ if (Test-Path $claudeSourceDir) {
         Backup-AndLink -Source $claudeMd -Destination (Join-Path $claudeDir "CLAUDE.md")
     }
 
-    # settings.json
-    $claudeSettings = Join-Path $claudeSourceDir "settings.json"
+    # settings.json (use Windows-specific version)
+    $claudeSettings = Join-Path $claudeSourceDir "settings.windows.json"
     if (Test-Path $claudeSettings) {
         Backup-AndLink -Source $claudeSettings -Destination (Join-Path $claudeDir "settings.json")
     }
@@ -195,6 +195,39 @@ if (Test-Path $claudeSourceDir) {
         }
     }
 
+    # hooks
+    $hooksDir = Join-Path $claudeSourceDir "hooks"
+    if (Test-Path $hooksDir) {
+        $destHooksDir = Join-Path $claudeDir "hooks"
+        if (-not (Test-Path $destHooksDir)) {
+            New-Item -ItemType Directory -Path $destHooksDir -Force | Out-Null
+        }
+        # Install all hooks except macOS-only ones
+        Get-ChildItem -Path $hooksDir -File | Where-Object {
+            $_.Name -notmatch '^(notify-permission|post-notify-macos)\.sh$'
+        } | ForEach-Object {
+            Backup-AndLink -Source $_.FullName -Destination (Join-Path $destHooksDir $_.Name)
+        }
+    }
+
+    # statusline (use Windows-specific version)
+    $statusline = Join-Path $claudeSourceDir "statusline-windows.sh"
+    if (Test-Path $statusline) {
+        Backup-AndLink -Source $statusline -Destination (Join-Path $claudeDir "statusline-windows.sh")
+    }
+
+    # agents
+    $agentsDir = Join-Path $claudeSourceDir "agents"
+    if (Test-Path $agentsDir) {
+        $destAgentsDir = Join-Path $claudeDir "agents"
+        if (-not (Test-Path $destAgentsDir)) {
+            New-Item -ItemType Directory -Path $destAgentsDir -Force | Out-Null
+        }
+        Get-ChildItem -Path $agentsDir -Filter "*.md" | ForEach-Object {
+            Backup-AndLink -Source $_.FullName -Destination (Join-Path $destAgentsDir $_.Name)
+        }
+    }
+
     # skills
     $skillsDir = Join-Path $claudeSourceDir "skills"
     if (Test-Path $skillsDir) {
@@ -211,6 +244,109 @@ if (Test-Path $claudeSourceDir) {
             }
         }
     }
+}
+
+# Copilot CLI (reuses Claude source of truth)
+$copilotDir = Join-Path $env:USERPROFILE ".copilot"
+if (Test-Path $claudeSourceDir) {
+    if (-not (Test-Path $copilotDir)) {
+        New-Item -ItemType Directory -Path $copilotDir -Force | Out-Null
+    }
+
+    # Core instructions (CLAUDE.md -> copilot-instructions.md)
+    $claudeMd = Join-Path $claudeSourceDir "CLAUDE.md"
+    if (Test-Path $claudeMd) {
+        Backup-AndLink -Source $claudeMd -Destination (Join-Path $copilotDir "copilot-instructions.md")
+    }
+
+    # Rules (.md -> .instructions.md)
+    $rulesDir = Join-Path $claudeSourceDir "rules"
+    if (Test-Path $rulesDir) {
+        $destRulesDir = Join-Path $copilotDir "rules"
+        if (-not (Test-Path $destRulesDir)) {
+            New-Item -ItemType Directory -Path $destRulesDir -Force | Out-Null
+        }
+        Get-ChildItem -Path $rulesDir -Filter "*.md" | ForEach-Object {
+            $name = $_.BaseName
+            Backup-AndLink -Source $_.FullName -Destination (Join-Path $destRulesDir "$name.instructions.md")
+        }
+    }
+
+    # Skills (SKILL.md -> skill-name.instructions.md)
+    $skillsDir = Join-Path $claudeSourceDir "skills"
+    if (Test-Path $skillsDir) {
+        $destSkillsDir = Join-Path $copilotDir "skills"
+        if (-not (Test-Path $destSkillsDir)) {
+            New-Item -ItemType Directory -Path $destSkillsDir -Force | Out-Null
+        }
+        Get-ChildItem -Path $skillsDir -Directory | ForEach-Object {
+            $skillName = $_.Name
+            $skillMd = Join-Path $_.FullName "SKILL.md"
+            if (Test-Path $skillMd) {
+                Backup-AndLink -Source $skillMd -Destination (Join-Path $destSkillsDir "$skillName.instructions.md")
+            }
+        }
+    }
+
+    # Hooks (Copilot-specific, skip macOS-only)
+    $copilotHooksDir = Join-Path $DotfilesDir "copilot\hooks"
+    if (Test-Path $copilotHooksDir) {
+        $destHooksDir = Join-Path $copilotDir "hooks"
+        if (-not (Test-Path $destHooksDir)) {
+            New-Item -ItemType Directory -Path $destHooksDir -Force | Out-Null
+        }
+        Get-ChildItem -Path $copilotHooksDir -File | Where-Object {
+            $_.Name -notmatch 'notify-macos'
+        } | ForEach-Object {
+            Backup-AndLink -Source $_.FullName -Destination (Join-Path $destHooksDir $_.Name)
+        }
+    }
+
+    # hooks.json (use Windows version if exists, otherwise filter macOS hooks from original)
+    $copilotHooksJson = Join-Path $DotfilesDir "copilot\hooks.windows.json"
+    if (-not (Test-Path $copilotHooksJson)) {
+        $copilotHooksJson = Join-Path $DotfilesDir "copilot\hooks.json"
+    }
+    if (Test-Path $copilotHooksJson) {
+        Backup-AndLink -Source $copilotHooksJson -Destination (Join-Path $copilotDir "hooks\hooks.json")
+    }
+
+    # Agents (merge multiple .md into single AGENTS.md)
+    $agentsDir = Join-Path $claudeSourceDir "agents"
+    if (Test-Path $agentsDir) {
+        $agentFiles = Get-ChildItem -Path $agentsDir -Filter "*.md" | Sort-Object Name
+        if ($agentFiles.Count -gt 0) {
+            $agentsDest = Join-Path $copilotDir "AGENTS.md"
+            if (Test-Path $agentsDest) {
+                if (-not $script:BackupCreated) {
+                    New-Item -ItemType Directory -Path $BackupDir -Force | Out-Null
+                    $script:BackupCreated = $true
+                }
+                Move-Item -Path $agentsDest -Destination (Join-Path $BackupDir "AGENTS.md") -Force
+            }
+            $content = ($agentFiles | ForEach-Object { Get-Content $_.FullName -Raw }) -join "`n`n---`n`n"
+            Set-Content -Path $agentsDest -Value $content -NoNewline
+            Write-Info "Generated $agentsDest from agents/*.md"
+        }
+    }
+}
+
+# Workspace config (~/git/)
+$workspaceDir = Join-Path $env:USERPROFILE "git"
+$claudeWorkspaceDir = Join-Path $DotfilesDir "claude-workspace"
+if ((Test-Path $claudeWorkspaceDir) -and (Test-Path $workspaceDir)) {
+    # Claude workspace CLAUDE.md
+    $wsClaude = Join-Path $claudeWorkspaceDir "CLAUDE.md"
+    if (Test-Path $wsClaude) {
+        Backup-AndLink -Source $wsClaude -Destination (Join-Path $workspaceDir "CLAUDE.md")
+    }
+
+    # Copilot workspace instructions
+    $wsCopilotDir = Join-Path $workspaceDir ".copilot"
+    if (-not (Test-Path $wsCopilotDir)) {
+        New-Item -ItemType Directory -Path $wsCopilotDir -Force | Out-Null
+    }
+    Backup-AndLink -Source $wsClaude -Destination (Join-Path $wsCopilotDir "copilot-instructions.md")
 }
 
 # Footer

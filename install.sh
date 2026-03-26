@@ -127,11 +127,15 @@ if [ -d "$DOTFILES_DIR/claude" ]; then
         done
     fi
 
-    # hooks
+    # hooks (skip Windows-specific ones)
     if [ -d "$DOTFILES_DIR/claude/hooks" ]; then
         mkdir -p "$CLAUDE_DIR/hooks"
         for file in "$DOTFILES_DIR/claude/hooks"/*.sh; do
-            [ -f "$file" ] && backup_and_link "$file" "$CLAUDE_DIR/hooks/$(basename "$file")"
+            [ -f "$file" ] || continue
+            case "$(basename "$file")" in
+                *-windows.sh) continue ;;
+            esac
+            backup_and_link "$file" "$CLAUDE_DIR/hooks/$(basename "$file")"
         done
     fi
 
