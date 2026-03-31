@@ -24,15 +24,17 @@ SESSION_ID=$(echo "$INPUT" | jq -r '.session_id // empty')
 DIR_NAME=$(basename "${CWD:-unknown}" 2>/dev/null)
 
 # Check if terminal is in the foreground
-FRONT_APP=$(osascript -e 'tell application "System Events" to get name of first process whose frontmost is true' 2>/dev/null)
+FRONT_APP=$(perl -e 'alarm 3; exec @ARGV' -- osascript -e 'tell application "System Events" to get name of first process whose frontmost is true' 2>/dev/null)
 
 case "$FRONT_APP" in
 Ghostty | ghostty)
-	# Terminal is in foreground — save the current window title for later use
+	# Terminal is in foreground — save the current window ID for later use
 	# by the notification hook (which fires when terminal is NOT in foreground)
-	if [ -n "$SESSION_ID" ]; then
-		osascript -e 'tell application "System Events" to tell process "ghostty" to get name of front window' \
-			2>/dev/null >"/tmp/claude-ghostty-${SESSION_ID}"
+	# Window ID is stable (unlike titles which change dynamically)
+	HS="/opt/homebrew/bin/hs"
+	if [ -n "$SESSION_ID" ] && [ -x "$HS" ]; then
+		perl -e 'alarm 3; exec @ARGV' -- "$HS" -c 'local app = hs.application.find("Ghostty"); if app then local w = app:focusedWindow(); if w then return tostring(w:id()) end end' \
+			2>/dev/null | grep -E '^[0-9]+$' >"/tmp/claude-ghostty-${SESSION_ID}"
 	fi
 	echo "$INPUT"
 	exit 0
@@ -59,7 +61,7 @@ if command -v terminal-notifier &>/dev/null; then
 		-activate "com.mitchellh.ghostty" \
 		2>/dev/null &
 else
-	osascript - "$DIR_NAME" "$SHORT_CMD" <<'APPLESCRIPT' 2>/dev/null
+	perl -e 'alarm 3; exec @ARGV' -- osascript - "$DIR_NAME" "$SHORT_CMD" <<'APPLESCRIPT' 2>/dev/null
 on run argv
   set dirName to item 1 of argv
   set cmd to item 2 of argv

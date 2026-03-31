@@ -4,8 +4,8 @@
     "preToolUse": [
       {
         "type": "command",
-        "bash": "$HOME/.copilot/hooks/pre-git-push.sh",
-        "comment": "Deny git push to prompt manual review"
+        "bash": "$HOME/.copilot/hooks/pre-auto-allow-bash-readonly.sh",
+        "comment": "Auto-approve read-only bash commands, deny git push"
       },
       {
         "type": "command",

@@ -6,7 +6,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "$HOME/.claude/hooks/pre-git-push.sh"
+            "command": "$HOME/.claude/hooks/pre-auto-allow-bash-readonly.sh"
           }
         ]
       },

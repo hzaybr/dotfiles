@@ -1,7 +1,5 @@
 #!/bin/bash
-# Notification hook: macOS notification when Claude needs permission approval
-# Shows working directory and action info so you know which session needs attention.
-# If terminal-notifier is installed, clicking the notification focuses the correct Ghostty window.
+# Notification hook: macOS notification when Copilot needs permission approval
 # Only notifies when the terminal is NOT in the foreground.
 
 INPUT=$(cat)
@@ -24,30 +22,28 @@ SESSION_ID=$(echo "$INPUT" | jq -r '.session_id // empty')
 # Use directory basename for compact display
 DIR_NAME=$(basename "${CWD:-unknown}" 2>/dev/null)
 
-# Read the Ghostty window title saved by PostToolUse hooks (saved while terminal was in foreground)
-TITLE_FILE="/tmp/claude-ghostty-${SESSION_ID}"
+# Read the Ghostty window ID saved by PostToolUse hooks
+TITLE_FILE="/tmp/copilot-ghostty-${SESSION_ID}"
 WINDOW_TITLE=""
 if [ -n "$SESSION_ID" ] && [ -f "$TITLE_FILE" ]; then
 	WINDOW_TITLE=$(cat "$TITLE_FILE")
 fi
 
 if command -v terminal-notifier &>/dev/null; then
-	# Rich notification: click to focus the correct Ghostty window via Hammerspoon
 	terminal-notifier \
-		-title "Claude Code 🔐" \
+		-title "Copilot CLI 🔐" \
 		-subtitle "📁 $DIR_NAME" \
 		-message "$MESSAGE" \
 		-sound "Ping" \
-		-group "claude-${SESSION_ID:-default}" \
-		-execute "$HOME/.claude/hooks/focus-ghostty-window.sh '$TITLE_FILE'" \
+		-group "copilot-${SESSION_ID:-default}" \
+		-execute "$HOME/.copilot/hooks/focus-ghostty-window.sh '$TITLE_FILE'" \
 		2>/dev/null &
 else
-	# Fallback: osascript with enriched info (no click action)
 	perl -e 'alarm 3; exec @ARGV' -- osascript - "$DIR_NAME" "$MESSAGE" <<'APPLESCRIPT' 2>/dev/null
 on run argv
   set dirName to item 1 of argv
   set msg to item 2 of argv
-  display notification msg with title "Claude Code 🔐" subtitle ("📁 " & dirName) sound name "Ping"
+  display notification msg with title "Copilot CLI 🔐" subtitle ("📁 " & dirName) sound name "Ping"
 end run
 APPLESCRIPT
 fi

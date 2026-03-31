@@ -2,7 +2,7 @@
 # PreToolUse hook: Auto-approve read-only bash commands (ls, pwd, cat, etc.)
 
 INPUT=$(cat)
-CMD=$(echo "$INPUT" | jq -r '.tool_input.command // ""')
+CMD=$(echo "$INPUT" | jq -r '.toolArgs // ""' | jq -r '.command // ""')
 
 # Safe read-only commands that cannot modify the filesystem
 SAFE_CMDS='^\s*(ls|pwd|which|type|file|wc|du|df|uname|whoami|id|env|printenv|echo|cat|head|tail|less|bat|stat|readlink|realpath|hostname|date|uptime|sw_vers|man|nproc|free|lsof|ps|pgrep|top)\b'
@@ -46,21 +46,15 @@ if echo "$CMD" | grep -qE "$SAFE_CMDS"; then
 	fi
 
 	jq -n '{
-    hookSpecificOutput: {
-      hookEventName: "PreToolUse",
-      permissionDecision: "allow",
-      permissionDecisionReason: "Read-only bash command auto-approved by hook"
-    }
+    permissionDecision: "allow",
+    permissionDecisionReason: "Read-only bash command auto-approved by hook"
   }'
 else
 	# Check for git push — require explicit confirmation
 	if echo "$CMD" | grep -q "git push"; then
 		jq -n '{
-      hookSpecificOutput: {
-        hookEventName: "PreToolUse",
-        permissionDecision: "ask",
-        permissionDecisionReason: "Review changes before pushing to remote"
-      }
+      permissionDecision: "deny",
+      permissionDecisionReason: "Review changes before pushing to remote. Run git push manually after review."
     }'
 	else
 		echo "$INPUT"
