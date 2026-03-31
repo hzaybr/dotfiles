@@ -3,8 +3,6 @@
 # This template file has been automatically created at the following
 # path since Ghostty couldn't find any existing config files on your system:
 #
-#   /Users/a122989/Library/Application Support/com.mitchellh.ghostty/config
-#
 # Run `ghostty +show-config --default --docs` to view a list of
 # all available config options and their default values.
 #
@@ -16,11 +14,19 @@
 font-family = "RecMonoLinear Nerd Font"
 font-family-bold = "RecMonoLinear Nerd Font"
 font-size = 16
+font-thicken = true
 theme = Blue Berry Pie 
 theme = Blazer
 theme = Catppuccin Mocha
 theme = Cursor Dark
 theme = Vesper
+adjust-cell-height = 2
+background-opacity = 0.8
+background-blur = macos-glass-regular
+
+# ----- font codepoint maps (TC)-----
+font-codepoint-map = U+4E00-U+9FFF,U+3000-U+303F,U+FF00-U+FFEF,U+FE30-U+FE4F=Heiti TC
+font-codepoint-map = U+4E00-U+9FFF=Heiti TC
 
 # ----- macOS-specific settings -----
 macos-titlebar-style = tabs
@@ -34,6 +40,7 @@ cursor-opacity = 0.3
 copy-on-select = clipboard
 link-url = true
 shell-integration-features = "no-cursor"
+selection-background = #505050
 
 # ----- key bindings -----
 keybind = ctrl+shift+d=new_split:right
@@ -50,3 +57,4 @@ keybind = ctrl+shift+apostrophe=resize_split:up,10
 keybind = ctrl+shift+w=close_surface
 keybind = ctrl+shift+l=clear_screen
 
+window-save-state = always
