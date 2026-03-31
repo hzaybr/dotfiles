@@ -28,16 +28,26 @@ FRONT_APP=$(perl -e 'alarm 3; exec @ARGV' -- osascript -e 'tell application "Sys
 
 case "$FRONT_APP" in
 Ghostty | ghostty)
-	# Terminal is in foreground — save the current window ID for later use
-	# by the notification hook (which fires when terminal is NOT in foreground)
-	# Window ID is stable (unlike titles which change dynamically)
 	HS="/opt/homebrew/bin/hs"
+	SESSION_FILE="/tmp/claude-ghostty-${SESSION_ID}"
 	if [ -n "$SESSION_ID" ] && [ -x "$HS" ]; then
-		perl -e 'alarm 3; exec @ARGV' -- "$HS" -c 'local app = hs.application.find("Ghostty"); if app then local w = app:focusedWindow(); if w then return tostring(w:id()) end end' \
-			2>/dev/null | grep -E '^[0-9]+$' >"/tmp/claude-ghostty-${SESSION_ID}"
+		CURRENT_INFO=$(perl -e 'alarm 3; exec @ARGV' -- "$HS" -c 'return getGhosttyWindowInfo()' \
+			2>/dev/null | grep -E '^[0-9]+:[0-9]+$')
+		SAVED_INFO=""
+		[ -f "$SESSION_FILE" ] && SAVED_INFO=$(cat "$SESSION_FILE")
+
+		if [ -z "$SAVED_INFO" ] || [ "$CURRENT_INFO" = "$SAVED_INFO" ]; then
+			# User is on this session's tab (or first time) — save and skip
+			[ -n "$CURRENT_INFO" ] && echo "$CURRENT_INFO" >"$SESSION_FILE"
+			echo "$INPUT"
+			exit 0
+		fi
+		# User is on a different tab — fall through to notify
+	else
+		# No session ID or no Hammerspoon — skip notification
+		echo "$INPUT"
+		exit 0
 	fi
-	echo "$INPUT"
-	exit 0
 	;;
 Terminal | iTerm2 | WezTerm | Alacritty | kitty)
 	echo "$INPUT"
@@ -51,6 +61,7 @@ if [ ${#SHORT_CMD} -gt 80 ]; then
 	SHORT_CMD="${SHORT_CMD:0:77}..."
 fi
 
+SESSION_FILE="/tmp/claude-ghostty-${SESSION_ID}"
 if command -v terminal-notifier &>/dev/null; then
 	terminal-notifier \
 		-title "Claude Code" \
@@ -58,7 +69,7 @@ if command -v terminal-notifier &>/dev/null; then
 		-message "✅ $SHORT_CMD" \
 		-sound "" \
 		-group "claude-${SESSION_ID:-default}" \
-		-activate "com.mitchellh.ghostty" \
+		-execute "$HOME/.claude/hooks/focus-ghostty-window.sh '$SESSION_FILE'" \
 		2>/dev/null &
 else
 	perl -e 'alarm 3; exec @ARGV' -- osascript - "$DIR_NAME" "$SHORT_CMD" <<'APPLESCRIPT' 2>/dev/null

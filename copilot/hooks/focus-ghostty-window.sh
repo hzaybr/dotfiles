@@ -1,20 +1,25 @@
 #!/bin/bash
-# Focus a specific Ghostty window by its saved window ID.
-# Uses Hammerspoon CLI to call focusGhosttyWindow() directly.
+# Focus Ghostty and switch to the correct window + tab.
+# Reads "windowId:tabIndex" from a temp file.
+# Tries window ID first (works across multiple windows),
+# falls back to tab-only if window ID is stale.
 # Called by terminal-notifier when the notification is clicked.
 # Usage: focus-ghostty-window.sh <id-file-path>
 
 ID_FILE="$1"
 HS="/opt/homebrew/bin/hs"
 
-# Read the window ID from the temp file
-WINDOW_ID=""
+# Read "windowId:tabIndex" from the temp file
+INFO=""
 if [ -f "$ID_FILE" ]; then
-	WINDOW_ID=$(cat "$ID_FILE")
+	INFO=$(cat "$ID_FILE")
 fi
 
-if [ -n "$WINDOW_ID" ] && [ -x "$HS" ]; then
-	"$HS" -c "focusGhosttyWindow($WINDOW_ID)" 2>/dev/null
+if [ -n "$INFO" ] && [ -x "$HS" ]; then
+	WINDOW_ID="${INFO%%:*}"
+	TAB_INDEX="${INFO##*:}"
+	# Try window ID first, fall back to tab-only
+	"$HS" -c "return focusGhosttyWindow($WINDOW_ID, ${TAB_INDEX:-0}) or focusGhosttyTab(${TAB_INDEX:-0})" 2>/dev/null
 	exit 0
 fi
 
