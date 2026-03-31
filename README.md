@@ -38,6 +38,7 @@ dotfiles/
 Before running `install.sh`:
 
 1. **Create the workspace directory** — the script expects the repo at `~/git/dotfiles`
+
    ```bash
    mkdir -p ~/git
    ```
@@ -80,9 +81,15 @@ Hooks are **not** shared between Claude Code and Copilot CLI due to format diffe
 - Claude hooks live in `claude/hooks/` — use `hookSpecificOutput` for feedback to the agent
 - Copilot hooks live in `copilot/hooks/` — `postToolUse` output is ignored by Copilot, so warnings go to stderr only
 
-Both sets cover the same checks (prettier, tsc, console.log, ruff, git push guard). `install.sh` installs both to their respective locations.
+Both sets cover the same functionality:
 
-Copilot CLI loads global hooks from `~/.copilot/hooks/*.json`, so no per-repo setup is needed.
+- **PreToolUse** — auto-approve read-only bash commands, deny git push, auto-approve reads and web operations
+- **PostToolUse** — prettier, tsc, console.log, ruff, stylua, shfmt, macOS desktop notifications
+- **Notification** (Claude only) — permission prompt alerts when terminal is not in foreground
+
+Hooks that call `osascript` or Hammerspoon CLI (`hs`) are wrapped with `perl -e 'alarm 3; exec @ARGV'` to prevent hangs (e.g. when Hammerspoon is not running).
+
+`install.sh` installs both to their respective locations. Copilot CLI loads global hooks from `~/.copilot/hooks/*.json`, so no per-repo setup is needed.
 
 ## Dependencies
 
