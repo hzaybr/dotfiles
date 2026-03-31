@@ -20,7 +20,7 @@ fi
 
 # Parse context
 CWD=$(echo "$INPUT" | jq -r '.cwd // empty')
-SESSION_ID=$(echo "$INPUT" | jq -r '.session_id // empty')
+SESSION_ID=$(echo "$INPUT" | jq -r '.session_id // .sessionId // empty')
 DIR_NAME=$(basename "${CWD:-unknown}" 2>/dev/null)
 
 # Check if terminal is in the foreground

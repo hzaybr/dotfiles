@@ -10,7 +10,7 @@ FRONT_APP=$(perl -e 'alarm 3; exec @ARGV' -- osascript -e 'tell application "Sys
 # Parse notification data from JSON
 CWD=$(echo "$INPUT" | jq -r '.cwd // empty')
 MESSAGE=$(echo "$INPUT" | jq -r '.message // "Permission approval needed"')
-SESSION_ID=$(echo "$INPUT" | jq -r '.session_id // empty')
+SESSION_ID=$(echo "$INPUT" | jq -r '.session_id // .sessionId // empty')
 
 # Use directory basename for compact display
 DIR_NAME=$(basename "${CWD:-unknown}" 2>/dev/null)
