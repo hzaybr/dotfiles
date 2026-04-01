@@ -1,0 +1,36 @@
+{
+  "suggest.noselect": false,
+  "diagnostic.displayByAle": false,
+  "diagnostic.errorSign": "✗",
+  "diagnostic.warningSign": "⚠",
+  "diagnostic.infoSign": "ℹ",
+  "diagnostic.hintSign": "→",
+  "coc.preferences.formatOnSave": false,
+  "languageserver": {
+    "bash": {
+      "command": "bash-language-server",
+      "args": ["start"],
+      "filetypes": ["sh"]
+    },
+    "lua": {
+      "command": "lua-language-server",
+      "filetypes": ["lua"],
+      "rootPatterns": [".luarc.json", ".stylua.toml"]
+    },
+    "docker": {
+      "command": "docker-langserver",
+      "args": ["--stdio"],
+      "filetypes": ["dockerfile"]
+    },
+    "yaml": {
+      "command": "yaml-language-server",
+      "args": ["--stdio"],
+      "filetypes": ["yaml", "yml"]
+    },
+    "zig": {
+      "command": "zls",
+      "filetypes": ["zig"]
+    }
+  },
+  "svelte.enable-ts-plugin": true
+}

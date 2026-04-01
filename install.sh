@@ -49,6 +49,14 @@ if [ -f "$DOTFILES_DIR/zsh/.p10k.zsh" ]; then
 	backup_and_link "$DOTFILES_DIR/zsh/.p10k.zsh" "$HOME/.p10k.zsh"
 fi
 
+# Vim
+if [ -f "$DOTFILES_DIR/vim/.vimrc" ]; then
+	backup_and_link "$DOTFILES_DIR/vim/.vimrc" "$HOME/.vimrc"
+fi
+if [ -f "$DOTFILES_DIR/vim/coc-settings.json" ]; then
+	backup_and_link "$DOTFILES_DIR/vim/coc-settings.json" "$HOME/.vim/coc-settings.json"
+fi
+
 # Tmux
 if [ -f "$DOTFILES_DIR/tmux/.tmux.conf" ]; then
 	backup_and_link "$DOTFILES_DIR/tmux/.tmux.conf" "$HOME/.tmux.conf"
