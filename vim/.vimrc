@@ -252,10 +252,21 @@ nmap <leader>cf <Plug>(coc-fix-current)
 nmap <leader>fm <Plug>(coc-format)
 xmap <leader>fm <Plug>(coc-format-selected)
 
-" Format on save
-autocmd BufWritePost *.py silent !black --quiet %
-autocmd BufWritePost *.py silent !isort --quiet %
-autocmd BufWritePost *.py edit!
+" Format on save (Python: black + isort)
+autocmd BufWritePost *.py call s:FormatPython()
+function! s:FormatPython()
+  let l:file = expand('%:p')
+  let l:modified = 0
+  if executable('black')
+    call system('black --quiet ' . shellescape(l:file) . ' 2>&1')
+    if v:shell_error == 0 | let l:modified = 1 | endif
+  endif
+  if executable('isort')
+    call system('isort --quiet ' . shellescape(l:file) . ' 2>&1')
+    if v:shell_error == 0 | let l:modified = 1 | endif
+  endif
+  if l:modified | silent edit! | endif
+endfunction
 autocmd BufWritePre * if exists('g:coc_service_initialized') && expand('%:e') !~# '^\(py\|pyw\)$' | silent! call CocAction('format') | endif
 
 " Show diagnostics list
