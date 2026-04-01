@@ -72,7 +72,31 @@ if [ ${#SHORT_CMD} -gt 80 ]; then
 	SHORT_CMD="${SHORT_CMD:0:77}..."
 fi
 
+# Refresh stale window ID before sending notification
 SESSION_FILE="/tmp/copilot-ghostty-${SESSION_ID}"
+HS="/opt/homebrew/bin/hs"
+if [ -n "$SESSION_ID" ] && [ -x "$HS" ] && [ -f "$SESSION_FILE" ]; then
+	SAVED_INFO=$(cat "$SESSION_FILE")
+	SAVED_WINDOW_ID="${SAVED_INFO%%:*}"
+	SAVED_TAB="${SAVED_INFO##*:}"
+	if [ -n "$SAVED_WINDOW_ID" ]; then
+		WINDOW_EXISTS=$(perl -e 'alarm 3; exec @ARGV' -- "$HS" -c \
+			"return hs.window.get($SAVED_WINDOW_ID) and 'yes' or 'no'" 2>/dev/null)
+		if [ "$WINDOW_EXISTS" = "no" ]; then
+			NEW_WINDOW_ID=$(perl -e 'alarm 3; exec @ARGV' -- "$HS" -c '
+				local app = hs.application.find("Ghostty")
+				if app then
+					local win = app:mainWindow()
+					if win then return tostring(win:id()) end
+				end
+				return ""
+			' 2>/dev/null)
+			if [ -n "$NEW_WINDOW_ID" ]; then
+				echo "${NEW_WINDOW_ID}:${SAVED_TAB}" >"$SESSION_FILE"
+			fi
+		fi
+	fi
+fi
 if command -v terminal-notifier &>/dev/null; then
 	terminal-notifier \
 		-title "Copilot CLI" \

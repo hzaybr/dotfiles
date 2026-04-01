@@ -16,27 +16,14 @@ local function switchToTab(win, tabIndex)
 	end
 end
 
--- Focus a Ghostty window by window ID, optionally switching to a specific tab.
--- tabIndex is 1-based; 0 or nil means don't switch tabs.
-function focusGhosttyWindow(windowId, tabIndex)
-	local win = hs.window.get(windowId)
-	if not win then
-		local app = hs.application.find("Ghostty")
-		if app then
-			app:activate()
-		end
-		return false
-	end
-
+-- Focus a window, handling space switching
+local function focusWindow(win, tabIndex)
 	local currentSpace = hs.spaces.focusedSpace()
 	local winSpaces = hs.spaces.windowSpaces(win)
 	local needsSpaceSwitch = winSpaces and #winSpaces > 0 and winSpaces[1] ~= currentSpace
 
 	if needsSpaceSwitch then
-		-- Move window to target space, go there, then raise it
-		-- (win:focus() pulls the window to current space, so avoid it)
-		local targetSpace = winSpaces[1]
-		hs.spaces.gotoSpace(targetSpace)
+		hs.spaces.gotoSpace(winSpaces[1])
 		hs.timer.doAfter(0.3, function()
 			win:application():activate()
 			win:raise()
@@ -46,7 +33,52 @@ function focusGhosttyWindow(windowId, tabIndex)
 		win:focus()
 		switchToTab(win, tabIndex)
 	end
-	return true
+end
+
+-- Find a Ghostty window that has at least N tabs
+local function findGhosttyWindowWithTab(tabIndex)
+	local app = hs.application.find("Ghostty")
+	if not app then
+		return nil
+	end
+	for _, win in ipairs(app:allWindows()) do
+		local axWin = hs.axuielement.windowElement(win)
+		local tabGroups = axWin:childrenWithRole("AXTabGroup")
+		if tabGroups and #tabGroups > 0 then
+			local tabs = tabGroups[1]:childrenWithRole("AXRadioButton")
+			if tabs and tabs[tabIndex] then
+				return win
+			end
+		end
+	end
+	return nil
+end
+
+-- Focus a Ghostty window by window ID, optionally switching to a specific tab.
+-- tabIndex is 1-based; 0 or nil means don't switch tabs.
+function focusGhosttyWindow(windowId, tabIndex)
+	-- Try exact window ID first
+	local win = hs.window.get(windowId)
+	if win then
+		focusWindow(win, tabIndex)
+		return true
+	end
+
+	-- Window ID stale — search all Ghostty windows for one with the right tab
+	if tabIndex and tabIndex > 0 then
+		win = findGhosttyWindowWithTab(tabIndex)
+		if win then
+			focusWindow(win, tabIndex)
+			return true
+		end
+	end
+
+	-- Last resort: just activate Ghostty
+	local app = hs.application.find("Ghostty")
+	if app then
+		app:activate()
+	end
+	return false
 end
 
 -- Focus Ghostty and switch to a specific tab index (1-based).
@@ -68,12 +100,13 @@ end
 
 -- Called via `hs -c` from hooks/focus-ghostty-window.sh
 -- Returns current tab info for saving: "windowId:tabIndex"
+-- Uses mainWindow to avoid capturing transient/secondary windows
 function getGhosttyWindowInfo()
 	local app = hs.application.find("Ghostty")
 	if not app then
 		return ""
 	end
-	local win = app:focusedWindow()
+	local win = app:mainWindow() or app:focusedWindow()
 	if not win then
 		return ""
 	end
