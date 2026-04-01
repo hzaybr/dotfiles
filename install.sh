@@ -22,7 +22,11 @@ backup_and_link() {
 	local src="$1"
 	local dest="$2"
 
-	if [ -e "$dest" ] || [ -L "$dest" ]; then
+	if [ -L "$dest" ]; then
+		# Already a symlink (from previous install), just remove it
+		rm "$dest"
+	elif [ -e "$dest" ]; then
+		# Real file, back it up
 		mkdir -p "$BACKUP_DIR"
 		log_warn "Backing up existing $dest to $BACKUP_DIR/"
 		mv "$dest" "$BACKUP_DIR/"
@@ -137,8 +141,8 @@ if [ -d "$DOTFILES_DIR/claude" ]; then
 		for skill_dir in "$DOTFILES_DIR/claude/skills"/*/; do
 			skill_name=$(basename "$skill_dir")
 			mkdir -p "$CLAUDE_DIR/skills/$skill_name"
-			if [ -f "$skill_dir/SKILL.md" ]; then
-				backup_and_link "$skill_dir/SKILL.md" "$CLAUDE_DIR/skills/$skill_name/SKILL.md"
+			if [ -f "${skill_dir}SKILL.md" ]; then
+				backup_and_link "${skill_dir}SKILL.md" "$CLAUDE_DIR/skills/$skill_name/SKILL.md"
 			fi
 		done
 	fi
@@ -187,8 +191,8 @@ if [ -d "$DOTFILES_DIR/claude" ]; then
 	if [ -d "$DOTFILES_DIR/claude/skills" ]; then
 		for skill_dir in "$DOTFILES_DIR/claude/skills"/*/; do
 			skill_name=$(basename "$skill_dir")
-			if [ -f "$skill_dir/SKILL.md" ]; then
-				backup_and_link "$skill_dir/SKILL.md" "$COPILOT_DIR/skills/$skill_name.instructions.md"
+			if [ -f "${skill_dir}SKILL.md" ]; then
+				backup_and_link "${skill_dir}SKILL.md" "$COPILOT_DIR/skills/$skill_name.instructions.md"
 			fi
 		done
 	fi

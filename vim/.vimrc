@@ -152,7 +152,7 @@ nnoremap ; :
 inoremap jj <ESC>
 
 " Clear search highlight
-nnoremap <ESC> :nohlsearch<CR>
+nnoremap <leader>h :nohlsearch<CR>
 
 " Better window navigation
 nnoremap <C-h> <C-w>h
