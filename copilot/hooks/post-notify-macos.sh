@@ -36,8 +36,19 @@ Ghostty | ghostty)
 		SAVED_INFO=""
 		[ -f "$SESSION_FILE" ] && SAVED_INFO=$(cat "$SESSION_FILE")
 
-		if [ -z "$SAVED_INFO" ] || [ "$CURRENT_INFO" = "$SAVED_INFO" ]; then
-			# User is on this session's tab (or first time) — save and skip
+		SAVED_WINDOW_ID="${SAVED_INFO%%:*}"
+		CURRENT_WINDOW_ID="${CURRENT_INFO%%:*}"
+
+		# Treat stale window ID (window no longer exists) as first-time
+		SAVED_WINDOW_VALID=true
+		if [ -n "$SAVED_WINDOW_ID" ] && [ "$SAVED_WINDOW_ID" != "$CURRENT_WINDOW_ID" ]; then
+			WINDOW_EXISTS=$(perl -e 'alarm 3; exec @ARGV' -- "$HS" -c \
+				"return hs.window.get($SAVED_WINDOW_ID) and 'yes' or 'no'" 2>/dev/null)
+			[ "$WINDOW_EXISTS" = "no" ] && SAVED_WINDOW_VALID=false
+		fi
+
+		if [ -z "$SAVED_INFO" ] || [ "$SAVED_WINDOW_VALID" = "false" ] || [ "$CURRENT_INFO" = "$SAVED_INFO" ]; then
+			# User is on this session's tab (or first time / stale window) — save and skip
 			[ -n "$CURRENT_INFO" ] && echo "$CURRENT_INFO" >"$SESSION_FILE"
 			echo "$INPUT"
 			exit 0
