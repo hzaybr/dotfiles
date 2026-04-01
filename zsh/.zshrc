@@ -138,8 +138,6 @@ alias sl='ls -CF'
 alias ks='ls -CF'
 alias lt='ls -tl'
 
-alias merry='ssh hzaybr@merry.ee.ncku.edu.tw -p 7342'
-alias luffy='ssh hzaybr@luffy.ee.ncku.edu.tw -p 2307'
 alias cls='clear && ls'
 alias cp='cp -i'
 alias du='du -h --max-depth=1'
@@ -163,10 +161,6 @@ alias py='python3'
 alias src='source'
 alias da='deactivate'
 alias gs='git status'
-alias ailab='ssh hzaybr@@35.206.216.72'
-alias a100='ssh hzaybr@10.11.60.1'
-alias a200='ssh hzaybr@10.11.60.2'
-alias a3='ssh hzaybr@10.11.140.150'
 
 function _rm() {
 while [ $# -ge 1 ]; do
@@ -200,20 +194,9 @@ source ~/.powerlevel10k/powerlevel10k.zsh-theme
 # To customize prompt, run `p10k configure` or edit ~/.p10k.zsh.
 [[ ! -f ~/.p10k.zsh ]] || source ~/.p10k.zsh
 
-export NVM_DIR="$HOME/.nvm"
-export PATH="/Users/a122989/.local/bin:$PATH,/Users/a122989/.local/share/nvim/mason/bin:$PATH"
-[ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"  # This loads nvm
-[ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"  # This loads nvm bash_completion
+# NVM (lazy load)
+[ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+[ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"
 
-# bun completions
-[ -s "/Users/a122989/.bun/_bun" ] && source "/Users/a122989/.bun/_bun"
-
-# bun
-export BUN_INSTALL="$HOME/.bun"
-export PATH="$BUN_INSTALL/bin:$PATH"
-
-export ENABLE_LSP_TOOLS=1
-export PATH="$HOME/.local/zig:$PATH"
-
-# Copilot CLI - load global rules from rules directory
-export COPILOT_CUSTOM_INSTRUCTIONS_DIRS="$HOME/.copilot/rules"
+# Bun completions
+[ -s "$HOME/.bun/_bun" ] && source "$HOME/.bun/_bun"
