@@ -13,8 +13,14 @@ let g:polyglot_disabled = ['svelte']
 
 call plug#begin('~/.vim/plugged')
 
-" Theme
+" Themes
 Plug 'fenetikm/falcon'
+Plug 'catppuccin/vim', { 'as': 'catppuccin' }
+Plug 'ghifarit53/tokyonight-vim'
+Plug 'morhetz/gruvbox'
+Plug 'sainnhe/everforest'
+Plug 'joshdick/onedark.vim'
+Plug 'nordtheme/vim', { 'as': 'nord' }
 
 " Statusline
 Plug 'vim-airline/vim-airline'
