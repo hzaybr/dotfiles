@@ -52,6 +52,9 @@ Plug 'tpope/vim-surround'
 " Comment
 Plug 'tpope/vim-commentary'
 
+" Make . work with surround/commentary
+Plug 'tpope/vim-repeat'
+
 " Syntax highlighting (vim has no treesitter)
 Plug 'sheerun/vim-polyglot'
 Plug 'evanleck/vim-svelte', { 'branch': 'main' }
