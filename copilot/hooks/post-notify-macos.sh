@@ -5,6 +5,10 @@
 # so the notification hook can find the correct window later.
 # Skips trivial read-only commands to avoid notification fatigue.
 
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+# shellcheck source=_notify-helper.sh
+source "$SCRIPT_DIR/_notify-helper.sh"
+
 INPUT=$(cat)
 CMD=$(echo "$INPUT" | jq -r '.toolArgs // ""' | jq -r '.command // ""')
 
@@ -23,48 +27,13 @@ CWD=$(echo "$INPUT" | jq -r '.cwd // empty')
 SESSION_ID=$(echo "$INPUT" | jq -r '.session_id // .sessionId // empty')
 DIR_NAME=$(basename "${CWD:-unknown}" 2>/dev/null)
 
-# Check if terminal is in the foreground
-FRONT_APP=$(perl -e 'alarm 3; exec @ARGV' -- osascript -e 'tell application "System Events" to get name of first process whose frontmost is true' 2>/dev/null)
+SESSION_FILE="/tmp/copilot-ghostty-${SESSION_ID}"
+FRONT_APP=$(get_front_app)
 
-case "$FRONT_APP" in
-Ghostty | ghostty)
-	HS="/opt/homebrew/bin/hs"
-	SESSION_FILE="/tmp/copilot-ghostty-${SESSION_ID}"
-	if [ -n "$SESSION_ID" ] && [ -x "$HS" ]; then
-		CURRENT_INFO=$(perl -e 'alarm 3; exec @ARGV' -- "$HS" -c 'return getGhosttyWindowInfo()' \
-			2>/dev/null | grep -E '^[0-9]+:[0-9]+$')
-		SAVED_INFO=""
-		[ -f "$SESSION_FILE" ] && SAVED_INFO=$(cat "$SESSION_FILE")
-
-		SAVED_WINDOW_ID="${SAVED_INFO%%:*}"
-		CURRENT_WINDOW_ID="${CURRENT_INFO%%:*}"
-
-		# Treat stale window ID (window no longer exists) as first-time
-		SAVED_WINDOW_VALID=true
-		if [ -n "$SAVED_WINDOW_ID" ] && [ "$SAVED_WINDOW_ID" != "$CURRENT_WINDOW_ID" ]; then
-			WINDOW_EXISTS=$(perl -e 'alarm 3; exec @ARGV' -- "$HS" -c \
-				"return hs.window.get($SAVED_WINDOW_ID) and 'yes' or 'no'" 2>/dev/null)
-			[ "$WINDOW_EXISTS" = "no" ] && SAVED_WINDOW_VALID=false
-		fi
-
-		if [ -z "$SAVED_INFO" ] || [ "$SAVED_WINDOW_VALID" = "false" ] || [ "$CURRENT_INFO" = "$SAVED_INFO" ]; then
-			# User is on this session's tab (or first time / stale window) — save and skip
-			[ -n "$CURRENT_INFO" ] && echo "$CURRENT_INFO" >"$SESSION_FILE"
-			echo "$INPUT"
-			exit 0
-		fi
-		# User is on a different tab — fall through to notify
-	else
-		# No session ID or no Hammerspoon — skip notification
-		echo "$INPUT"
-		exit 0
-	fi
-	;;
-Terminal | iTerm2 | WezTerm | Alacritty | kitty)
+if is_user_on_tab "$SESSION_FILE" "$FRONT_APP" save; then
 	echo "$INPUT"
 	exit 0
-	;;
-esac
+fi
 
 # Truncate long commands for readability
 SHORT_CMD="$CMD"
@@ -72,49 +41,14 @@ if [ ${#SHORT_CMD} -gt 80 ]; then
 	SHORT_CMD="${SHORT_CMD:0:77}..."
 fi
 
-# Refresh stale window ID before sending notification
-SESSION_FILE="/tmp/copilot-ghostty-${SESSION_ID}"
-HS="/opt/homebrew/bin/hs"
-if [ -n "$SESSION_ID" ] && [ -x "$HS" ] && [ -f "$SESSION_FILE" ]; then
-	SAVED_INFO=$(cat "$SESSION_FILE")
-	SAVED_WINDOW_ID="${SAVED_INFO%%:*}"
-	SAVED_TAB="${SAVED_INFO##*:}"
-	if [ -n "$SAVED_WINDOW_ID" ]; then
-		WINDOW_EXISTS=$(perl -e 'alarm 3; exec @ARGV' -- "$HS" -c \
-			"return hs.window.get($SAVED_WINDOW_ID) and 'yes' or 'no'" 2>/dev/null)
-		if [ "$WINDOW_EXISTS" = "no" ]; then
-			NEW_WINDOW_ID=$(perl -e 'alarm 3; exec @ARGV' -- "$HS" -c '
-				local app = hs.application.find("Ghostty")
-				if app then
-					local win = app:mainWindow()
-					if win then return tostring(win:id()) end
-				end
-				return ""
-			' 2>/dev/null)
-			if [ -n "$NEW_WINDOW_ID" ]; then
-				echo "${NEW_WINDOW_ID}:${SAVED_TAB}" >"$SESSION_FILE"
-			fi
-		fi
-	fi
-fi
-if command -v terminal-notifier &>/dev/null; then
-	terminal-notifier \
-		-title "Copilot CLI" \
-		-subtitle "📁 $DIR_NAME" \
-		-message "✅ $SHORT_CMD" \
-		-sound "" \
-		-group "copilot-${SESSION_ID:-default}" \
-		-activate "com.mitchellh.ghostty" \
-		-execute "$HOME/.copilot/hooks/focus-ghostty-window.sh '$SESSION_FILE'" \
-		2>/dev/null &
-else
-	perl -e 'alarm 3; exec @ARGV' -- osascript - "$DIR_NAME" "$SHORT_CMD" <<'APPLESCRIPT' 2>/dev/null
-on run argv
-  set dirName to item 1 of argv
-  set cmd to item 2 of argv
-  display notification ("✅ " & cmd) with title "Copilot CLI" subtitle ("📁 " & dirName)
-end run
-APPLESCRIPT
-fi
+refresh_session_window "$SESSION_FILE"
+
+send_notification \
+	"Copilot CLI" \
+	"📁 $DIR_NAME" \
+	"✅ $SHORT_CMD" \
+	"" \
+	"copilot-${SESSION_ID:-default}" \
+	"$HOME/.copilot/hooks/focus-ghostty-window.sh '$SESSION_FILE'"
 
 echo "$INPUT"

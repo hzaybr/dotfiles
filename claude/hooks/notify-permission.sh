@@ -4,10 +4,11 @@
 # If terminal-notifier is installed, clicking the notification focuses the correct Ghostty window.
 # Only notifies when the terminal is NOT in the foreground.
 
-INPUT=$(cat)
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+# shellcheck source=_notify-helper.sh
+source "$SCRIPT_DIR/_notify-helper.sh"
 
-# Check if terminal is in the foreground — skip if user is already watching
-FRONT_APP=$(perl -e 'alarm 3; exec @ARGV' -- osascript -e 'tell application "System Events" to get name of first process whose frontmost is true' 2>/dev/null)
+INPUT=$(cat)
 
 # Parse notification data from JSON
 CWD=$(echo "$INPUT" | jq -r '.cwd // empty')
@@ -18,53 +19,25 @@ SESSION_ID=$(echo "$INPUT" | jq -r '.session_id // empty')
 DIR_NAME=$(basename "${CWD:-unknown}" 2>/dev/null)
 
 SESSION_FILE="/tmp/claude-ghostty-${SESSION_ID}"
+FRONT_APP=$(get_front_app)
 
-case "$FRONT_APP" in
-Ghostty | ghostty)
-	# Check if user is on this session's tab
-	HS="/opt/homebrew/bin/hs"
-	if [ -n "$SESSION_ID" ] && [ -x "$HS" ]; then
-		CURRENT_INFO=$(perl -e 'alarm 3; exec @ARGV' -- "$HS" -c 'return getGhosttyWindowInfo()' \
-			2>/dev/null | grep -E '^[0-9]+:[0-9]+$')
-		SAVED_INFO=""
-		[ -f "$SESSION_FILE" ] && SAVED_INFO=$(cat "$SESSION_FILE")
-
-		if [ -n "$SAVED_INFO" ] && [ "$CURRENT_INFO" = "$SAVED_INFO" ]; then
-			# User is on this tab — skip notification
-			echo "$INPUT"
-			exit 0
-		fi
-	else
-		echo "$INPUT"
-		exit 0
-	fi
-	# User is on a different tab — fall through to notify
-	;;
-Terminal | iTerm2 | WezTerm | Alacritty | kitty)
+if is_user_on_tab "$SESSION_FILE" "$FRONT_APP"; then
 	echo "$INPUT"
 	exit 0
-	;;
-esac
-
-if command -v terminal-notifier &>/dev/null; then
-	# Rich notification: click to focus the correct Ghostty window via Hammerspoon
-	terminal-notifier \
-		-title "Claude Code 🔐" \
-		-subtitle "📁 $DIR_NAME" \
-		-message "$MESSAGE" \
-		-sound "Ping" \
-		-group "claude-${SESSION_ID:-default}" \
-		-execute "$HOME/.claude/hooks/focus-ghostty-window.sh '$TITLE_FILE'" \
-		2>/dev/null &
-else
-	# Fallback: osascript with enriched info (no click action)
-	perl -e 'alarm 3; exec @ARGV' -- osascript - "$DIR_NAME" "$MESSAGE" <<'APPLESCRIPT' 2>/dev/null
-on run argv
-  set dirName to item 1 of argv
-  set msg to item 2 of argv
-  display notification msg with title "Claude Code 🔐" subtitle ("📁 " & dirName) sound name "Ping"
-end run
-APPLESCRIPT
 fi
+
+# Only pass focus script if session file exists (written by post-notify-macos when user was watching)
+FOCUS_SCRIPT=""
+if [ -f "$SESSION_FILE" ]; then
+	FOCUS_SCRIPT="$HOME/.claude/hooks/focus-ghostty-window.sh '$SESSION_FILE'"
+fi
+
+send_notification \
+	"Claude Code 🔐" \
+	"📁 $DIR_NAME" \
+	"$MESSAGE" \
+	"Ping" \
+	"claude-${SESSION_ID:-default}" \
+	"$FOCUS_SCRIPT"
 
 echo "$INPUT"
