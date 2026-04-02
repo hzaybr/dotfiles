@@ -130,9 +130,6 @@ set splitbelow
 " Backspace
 set backspace=indent,eol,start
 
-" Mouse
-set mouse=a
-
 
 " Theme
 silent! colorscheme falcon
