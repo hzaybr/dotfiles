@@ -211,6 +211,9 @@ export PATH="$HOME/.local/bin:$HOME/.local/share/nvim/mason/bin:$HOME/.local/zig
 # Bun completions
 [ -s "$HOME/.bun/_bun" ] && source "$HOME/.bun/_bun"
 
+# fzf shell integration (Ctrl+R history, Ctrl+T files, Alt+C cd)
+command -v fzf &>/dev/null && eval "$(fzf --zsh)"
+
 # fzf (Ctrl+R history search, Ctrl+T file search, Alt+C cd)
 [ -f "$HOME/.fzf.zsh" ] && source "$HOME/.fzf.zsh"
 # Fallback: brew or vim-plug fzf
