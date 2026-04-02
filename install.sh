@@ -52,9 +52,6 @@ fi
 if [ -f "$DOTFILES_DIR/zsh/.p10k.zsh" ]; then
 	backup_and_link "$DOTFILES_DIR/zsh/.p10k.zsh" "$HOME/.p10k.zsh"
 fi
-if [ -f "$DOTFILES_DIR/zsh/.zprofile" ]; then
-	backup_and_link "$DOTFILES_DIR/zsh/.zprofile" "$HOME/.zprofile"
-fi
 
 # Vim
 if [ -f "$DOTFILES_DIR/vim/.vimrc" ]; then
