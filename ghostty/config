@@ -15,13 +15,13 @@ font-family = "RecMonoLinear Nerd Font"
 font-family-bold = "RecMonoLinear Nerd Font"
 font-size = 16
 font-thicken = true
-theme = Blue Berry Pie 
+theme = Blue Berry Pie
 theme = Blazer
 theme = Catppuccin Mocha
 theme = Cursor Dark
 theme = Vesper
 adjust-cell-height = 2
-background-opacity = 0.8
+background-opacity = 0.94
 background-blur = macos-glass-regular
 
 # ----- font codepoint maps (TC)-----
@@ -34,8 +34,8 @@ macos-option-as-alt = true
 macos-icon = official
 
 # ----- Cursor & behavior -----
-cursor-style = block 
-cursor-style-blink = true 
+cursor-style = block
+cursor-style-blink = true
 cursor-opacity = 0.3
 copy-on-select = clipboard
 link-url = true
@@ -56,5 +56,6 @@ keybind = ctrl+shift+semicolon=resize_split:down,10
 keybind = ctrl+shift+apostrophe=resize_split:up,10
 keybind = ctrl+shift+w=close_surface
 keybind = ctrl+shift+l=clear_screen
+keybind = ctrl+left_bracket=text:\x1b
 
 window-save-state = always

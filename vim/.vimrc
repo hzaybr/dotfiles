@@ -154,12 +154,6 @@ inoremap jj <ESC>
 " Clear search highlight
 nnoremap <leader>h :nohlsearch<CR>
 
-" Better window navigation
-nnoremap <C-h> <C-w>h
-nnoremap <C-j> <C-w>j
-nnoremap <C-k> <C-w>k
-nnoremap <C-l> <C-w>l
-
 " Resize splits
 nnoremap <leader>= :resize +2<CR>
 nnoremap <leader>- :resize -2<CR>
@@ -169,7 +163,7 @@ nnoremap <leader>. :vertical resize -2<CR>
 " Buffer navigation
 nnoremap <Tab> :bnext<CR>
 nnoremap <S-Tab> :bprevious<CR>
-nnoremap <leader>bd :bdelete<CR>
+nnoremap <leader>x :bdelete<CR>
 
 " Move lines up/down
 vnoremap J :m '>+1<CR>gv=gv
