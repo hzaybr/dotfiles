@@ -26,11 +26,6 @@
       },
       {
         "type": "command",
-        "bash": "$HOME/.copilot/hooks/post-tsc-check.sh",
-        "comment": "TypeScript type check"
-      },
-      {
-        "type": "command",
         "bash": "$HOME/.copilot/hooks/post-console-log.sh",
         "comment": "Detect console.log statements"
       },
