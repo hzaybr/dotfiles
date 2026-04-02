@@ -6,12 +6,11 @@
 local M = {}
 
 M.base46 = {
-  theme = "falcon",
+  theme = "monochrome",
 
-  -- hl_override = {
-  -- 	Comment = { italic = true },
-  -- 	["@comment"] = { italic = true },
-  -- },
+  hl_override = {
+    Visual = { bg = "#5a5a7a" },
+  },
 }
 
 -- M.nvdash = { load_on_startup = true }
