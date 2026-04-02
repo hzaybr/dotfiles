@@ -133,8 +133,6 @@ set backspace=indent,eol,start
 " Mouse
 set mouse=a
 
-" Clipboard
-set clipboard=unnamedplus
 
 " Theme
 silent! colorscheme falcon
