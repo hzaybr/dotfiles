@@ -199,6 +199,7 @@ export NVM_DIR="$HOME/.nvm"
 export BUN_INSTALL="$HOME/.bun"
 export ENABLE_LSP_TOOLS=1
 export COPILOT_CUSTOM_INSTRUCTIONS_DIRS="$HOME/.copilot/rules"
+export CLAUDE_CODE_NO_FLICKER=1
 export PATH="$HOME/.local/bin:$HOME/.local/share/nvim/mason/bin:$HOME/.local/zig:$BUN_INSTALL/bin:$PATH"
 # Homebrew (macOS)
 [ -d "/opt/homebrew/bin" ] && export PATH="/opt/homebrew/bin:/opt/homebrew/sbin:$PATH"
@@ -209,3 +210,17 @@ export PATH="$HOME/.local/bin:$HOME/.local/share/nvim/mason/bin:$HOME/.local/zig
 
 # Bun completions
 [ -s "$HOME/.bun/_bun" ] && source "$HOME/.bun/_bun"
+
+# fzf (Ctrl+R history search, Ctrl+T file search, Alt+C cd)
+[ -f "$HOME/.fzf.zsh" ] && source "$HOME/.fzf.zsh"
+# Fallback: brew or vim-plug fzf
+if ! command -v fzf &>/dev/null; then
+  for fzf_path in /opt/homebrew/opt/fzf "$HOME/.vim/plugged/fzf"; do
+    if [ -d "$fzf_path" ]; then
+      export PATH="$fzf_path/bin:$PATH"
+      [ -f "$fzf_path/shell/key-bindings.zsh" ] && source "$fzf_path/shell/key-bindings.zsh"
+      [ -f "$fzf_path/shell/completion.zsh" ] && source "$fzf_path/shell/completion.zsh"
+      break
+    fi
+  done
+fi
