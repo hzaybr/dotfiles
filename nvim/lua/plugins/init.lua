@@ -79,7 +79,16 @@ return {
     "MeanderingProgrammer/render-markdown.nvim",
     dependencies = { "nvim-treesitter/nvim-treesitter", "nvim-tree/nvim-web-devicons" },
     ft = { "markdown" },
-    opts = {},
+    opts = {
+      code = { style = "language" },
+    },
+  },
+  {
+    "sotte/presenting.nvim",
+    cmd = { "Presenting" },
+    opts = {
+      options = { width = 110 },
+    },
   },
   {
     "3rd/image.nvim",
