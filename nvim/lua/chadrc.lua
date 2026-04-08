@@ -9,7 +9,7 @@ M.base46 = {
   theme = "monochrome",
 
   hl_override = {
-    Visual = { bg = "#5a5a7a" },
+    Visual = { bg = "#383850" },
   },
 }
 
