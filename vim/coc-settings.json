@@ -30,6 +30,11 @@
     "zig": {
       "command": "zls",
       "filetypes": ["zig"]
+    },
+    "rust": {
+      "command": "rust-analyzer",
+      "filetypes": ["rust"],
+      "rootPatterns": ["Cargo.toml"]
     }
   },
   "svelte.enable-ts-plugin": true

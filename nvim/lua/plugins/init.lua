@@ -66,6 +66,7 @@ return {
         "tsx",
         "javascript",
         "python",
+        "rust",
         "bash",
         "json",
         "yaml",

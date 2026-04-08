@@ -6,6 +6,7 @@ local options = {
     json = { "fixjson" },
     markdown = { "prettierd", "prettier" },
     python = { "ruff_format", "ruff_organize_imports" },
+    rust = { "rustfmt" },
     sh = { "shfmt" },
     svelte = { "prettierd", "prettier" },
     typescript = { "prettierd", "prettier" },
