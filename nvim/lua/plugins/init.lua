@@ -96,12 +96,15 @@ return {
     lazy = false,
     opts = {
       backend = "kitty",
+      max_width_window_percentage = 60,
       integrations = {
         markdown = {
           enabled = true,
           clear_in_insert_mode = false,
           only_render_image_at_cursor = false,
         },
+        html = { enabled = true },
+        css = { enabled = true },
       },
       hijack_file_patterns = { "*.png", "*.jpg", "*.jpeg", "*.gif", "*.webp", "*.avif" },
     },
