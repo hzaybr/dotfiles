@@ -227,3 +227,6 @@ if ! command -v fzf &>/dev/null; then
     fi
   done
 fi
+
+# Machine-specific overrides (not tracked in git)
+[[ -f ~/.zshrc.local ]] && source ~/.zshrc.local
