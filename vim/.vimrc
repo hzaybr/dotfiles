@@ -15,12 +15,9 @@ call plug#begin('~/.vim/plugged')
 
 " Themes
 Plug 'fenetikm/falcon'
-Plug 'catppuccin/vim', { 'as': 'catppuccin' }
-Plug 'ghifarit53/tokyonight-vim'
-Plug 'morhetz/gruvbox'
 Plug 'sainnhe/everforest'
-Plug 'joshdick/onedark.vim'
 Plug 'nordtheme/vim', { 'as': 'nord' }
+Plug 'cocopon/iceberg.vim'
 
 " Statusline
 Plug 'vim-airline/vim-airline'
@@ -296,6 +293,8 @@ augroup vimrc
   autocmd BufWritePre * %s/\s\+$//e
   " Return to last edit position
   autocmd BufReadPost * if line("'\"") > 1 && line("'\"") <= line("$") | exe "normal! g'\"" | endif
+  " One-way clipboard sync: yank → system clipboard (p still uses unnamed register only)
+  autocmd TextYankPost * if v:event.operator ==# 'y' | call setreg('+', v:event.regcontents, v:event.regtype) | endif
 augroup END
 
 " Create undo directory if missing
