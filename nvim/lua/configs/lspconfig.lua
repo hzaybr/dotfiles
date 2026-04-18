@@ -16,6 +16,12 @@ local servers = {
   "yamlls",
   "zls",
 }
+vim.lsp.config("cssls", {
+  settings = {
+    css = { lint = { unknownAtRules = "ignore" } },
+  },
+})
+
 vim.lsp.enable(servers)
 
 -- read :h vim.lsp.config for changing options of lsp servers
