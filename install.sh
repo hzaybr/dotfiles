@@ -37,6 +37,208 @@ backup_and_link() {
 	log_info "Linked $dest -> $src"
 }
 
+# Merge CLAUDE.md + rules/*.md into a single instructions file.
+# Usage: merge_instructions <dest>
+merge_instructions() {
+	local dest="$1"
+	local tmp
+	tmp=$(mktemp)
+
+	if [ -f "$DOTFILES_DIR/claude/CLAUDE.md" ]; then
+		cat "$DOTFILES_DIR/claude/CLAUDE.md" >>"$tmp"
+	fi
+
+	if [ -d "$DOTFILES_DIR/claude/rules" ]; then
+		for file in "$DOTFILES_DIR/claude/rules"/*.md; do
+			[ -f "$file" ] || continue
+			echo "" >>"$tmp"
+			echo "---" >>"$tmp"
+			echo "" >>"$tmp"
+			cat "$file" >>"$tmp"
+		done
+	fi
+
+	if [ -e "$dest" ] || [ -L "$dest" ]; then
+		mkdir -p "$BACKUP_DIR"
+		mv "$dest" "$BACKUP_DIR/"
+	fi
+	mkdir -p "$(dirname "$dest")"
+	mv "$tmp" "$dest"
+	log_info "Generated $dest from CLAUDE.md + rules/*.md"
+}
+
+# Warn for unresolved MCP env placeholders like ${VAR} or $VAR.
+warn_missing_mcp_env_vars() {
+	local source="$1"
+	local missing_vars
+	missing_vars=$(
+		jq -r '
+			(.mcpServers // . // {})
+			| to_entries[]
+			| (.value.env // {})
+			| to_entries[]
+			| select(.value | type == "string" and test("^\\$\\{?[A-Za-z_][A-Za-z0-9_]*\\}?$"))
+			| (.value | capture("^\\$\\{?(?<name>[A-Za-z_][A-Za-z0-9_]*)\\}?$").name) as $name
+			| select((env[$name] // "") == "")
+			| $name
+		' "$source" | sort -u
+	)
+
+	if [ -n "$missing_vars" ]; then
+		while IFS= read -r var_name; do
+			[ -n "$var_name" ] || continue
+			log_warn "MCP env var $var_name is not set; omitting it during sync"
+		done <<<"$missing_vars"
+	fi
+}
+
+# Resolve MCP source JSON into concrete values by replacing ${VAR}/$VAR from shell env.
+# Supports target-specific overrides via <target>Args (e.g. codexArgs, geminiArgs),
+# which fully replace the base args when syncing for that target.
+resolve_mcp_source() {
+	local source="$1"
+	local resolved="$2"
+	local target="${3:-claude}"
+
+	jq --arg target "$target" '
+		def resolve_value:
+			if type == "string" and test("^\\$\\{?[A-Za-z_][A-Za-z0-9_]*\\}?$") then
+				capture("^\\$\\{?(?<name>[A-Za-z_][A-Za-z0-9_]*)\\}?$").name as $name
+				| (env[$name] // null)
+			else
+				.
+			end;
+
+		def resolve_env:
+			((. // {})
+				| to_entries
+				| map(
+					(.value | resolve_value) as $resolved
+					| select($resolved != null)
+					| { key: .key, value: $resolved }
+				)
+				| from_entries);
+
+		($target + "Args") as $override_key |
+
+		{
+			mcpServers: (
+				(.mcpServers // . // {})
+				| with_entries(
+					.value = {
+						command: .value.command,
+						args: (
+							if (.value[$override_key] // null) != null
+							then .value[$override_key]
+							else (.value.args // [])
+							end
+						),
+						env: (.value.env | resolve_env)
+					}
+				)
+			)
+		}
+	' "$source" >"$resolved"
+}
+
+# Sync MCP servers into ~/.claude.json.
+sync_claude_mcp() {
+	local source="$1"
+	local dest="$2"
+
+	if ! command -v jq >/dev/null 2>&1; then
+		log_warn "jq not found; skipping Claude MCP sync"
+		return
+	fi
+	if [ ! -f "$source" ]; then
+		log_warn "MCP source not found at $source; skipping Claude MCP sync"
+		return
+	fi
+
+	local resolved
+	local tmp
+	resolved=$(mktemp)
+	tmp=$(mktemp)
+
+	resolve_mcp_source "$source" "$resolved" claude
+
+	if [ -f "$dest" ]; then
+		jq --slurpfile mcp "$resolved" '.mcpServers = ($mcp[0].mcpServers // {})' "$dest" >"$tmp"
+	else
+		jq -n --slurpfile mcp "$resolved" '{ mcpServers: ($mcp[0].mcpServers // {}) }' >"$tmp"
+	fi
+
+	mv "$tmp" "$dest"
+	rm -f "$resolved"
+	log_info "Synced Claude MCP servers to $dest"
+}
+
+# Sync MCP servers into a managed block inside ~/.codex/config.toml.
+sync_codex_mcp() {
+	local source="$1"
+	local dest="$2"
+	local begin_marker="# BEGIN MCP SERVERS (managed by dotfiles)"
+	local end_marker="# END MCP SERVERS (managed by dotfiles)"
+
+	if ! command -v jq >/dev/null 2>&1; then
+		log_warn "jq not found; skipping Codex MCP sync"
+		return
+	fi
+	if [ ! -f "$source" ]; then
+		log_warn "MCP source not found at $source; skipping Codex MCP sync"
+		return
+	fi
+
+	local resolved
+	local base_tmp
+	local block_tmp
+	local output_tmp
+	resolved=$(mktemp)
+	base_tmp=$(mktemp)
+	block_tmp=$(mktemp)
+	output_tmp=$(mktemp)
+
+	resolve_mcp_source "$source" "$resolved" codex
+
+	if [ -f "$dest" ]; then
+		awk -v begin="$begin_marker" -v end="$end_marker" '
+			$0 == begin { skip=1; next }
+			$0 == end { skip=0; next }
+			!skip { print }
+		' "$dest" >"$base_tmp"
+	else
+		: >"$base_tmp"
+	fi
+
+	jq -r '
+		(.mcpServers // {})
+		| to_entries[]
+		| select((.value.command // "") != "")
+		| "[mcp_servers.\(.key | @json)]",
+			"command = \(.value.command | @json)",
+			(if ((.value.args // []) | length) > 0 then "args = \((.value.args // []) | @json)" else empty end),
+			(if ((.value.env // {}) | length) > 0 then
+				"env = { " + ((.value.env // {}) | to_entries | map((.key | @json) + " = " + (.value | @json)) | join(", ")) + " }"
+			else empty end),
+			""
+	' "$resolved" >"$block_tmp"
+
+	cat "$base_tmp" >"$output_tmp"
+	if [ -s "$block_tmp" ]; then
+		if [ -s "$output_tmp" ]; then
+			echo "" >>"$output_tmp"
+		fi
+		echo "$begin_marker" >>"$output_tmp"
+		cat "$block_tmp" >>"$output_tmp"
+		echo "$end_marker" >>"$output_tmp"
+	fi
+
+	mkdir -p "$(dirname "$dest")"
+	mv "$output_tmp" "$dest"
+	rm -f "$resolved" "$base_tmp" "$block_tmp"
+	log_info "Synced Codex MCP servers to $dest"
+}
+
 echo "=========================================="
 echo "        Dotfiles Installation Script"
 echo "=========================================="
@@ -226,6 +428,34 @@ if [ -d "$DOTFILES_DIR/claude" ]; then
 		fi
 		mv "$agents_tmp" "$COPILOT_DIR/AGENTS.md"
 		log_info "Generated $COPILOT_DIR/AGENTS.md from agents/*.md"
+	fi
+fi
+
+# Codex CLI (symlinks to Claude source of truth)
+CODEX_DIR="$HOME/.codex"
+CODEX_SKILLS_DIR="$HOME/.agents/skills"
+MCP_SOURCE="$DOTFILES_DIR/claude/mcp-servers.json"
+if [ -d "$DOTFILES_DIR/claude" ]; then
+	mkdir -p "$CODEX_DIR" "$CODEX_SKILLS_DIR"
+
+	# AGENTS.md (CLAUDE.md + rules/*.md merged into one file)
+	merge_instructions "$CODEX_DIR/AGENTS.md"
+
+	# Skills (~/.agents/skills/<name>/ -> claude/skills/<name>/)
+	if [ -d "$DOTFILES_DIR/claude/skills" ]; then
+		for skill_dir in "$DOTFILES_DIR/claude/skills"/*/; do
+			skill_name=$(basename "$skill_dir")
+			backup_and_link "${skill_dir%/}" "$CODEX_SKILLS_DIR/$skill_name"
+		done
+	fi
+
+	# MCP servers (repo source -> Claude + Codex)
+	if [ -f "$MCP_SOURCE" ]; then
+		if command -v jq >/dev/null 2>&1; then
+			warn_missing_mcp_env_vars "$MCP_SOURCE"
+		fi
+		sync_claude_mcp "$MCP_SOURCE" "$HOME/.claude.json"
+		sync_codex_mcp "$MCP_SOURCE" "$CODEX_DIR/config.toml"
 	fi
 fi
 

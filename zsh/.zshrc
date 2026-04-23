@@ -204,6 +204,9 @@ export PATH="$HOME/.local/bin:$HOME/.local/share/nvim/mason/bin:$HOME/.local/zig
 # Homebrew (macOS)
 [ -d "/opt/homebrew/bin" ] && export PATH="/opt/homebrew/bin:/opt/homebrew/sbin:$PATH"
 
+# GitHub token for MCP servers (inherited by child processes; never written to disk)
+command -v gh >/dev/null 2>&1 && export GITHUB_PERSONAL_ACCESS_TOKEN="$(gh auth token 2>/dev/null)"
+
 # NVM (lazy load)
 [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
 [ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"

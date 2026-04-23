@@ -29,6 +29,7 @@ brew install --cask claude-code
 
 - Global coding instructions (CLAUDE.md)
 - Coding style and security rules
+- MCP servers (from `mcp-servers.json`)
 - Pre/post tool-use hooks (auto-approve reads, format on save, notifications)
 - LSP plugins: pyright, typescript, lua, rust-analyzer
 - Custom skills and agent definitions

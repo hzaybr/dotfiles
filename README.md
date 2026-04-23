@@ -18,6 +18,7 @@ dotfiles/
 ├── claude/
 │   ├── CLAUDE.md           # Global Claude Code instructions
 │   ├── settings.json       # Hooks and plugins
+│   ├── mcp-servers.json    # MCP server source of truth (no secrets)
 │   ├── statusline.sh       # Status line script
 │   ├── rules/              # Coding style and security rules
 │   ├── commands/           # Custom commands (tdd, plan, etc.)
@@ -59,6 +60,7 @@ The script will:
 1. Backup existing config files to `~/.dotfiles_backup/<timestamp>/`
 2. Create symbolic links to the dotfiles
 3. Generate GitHub Copilot CLI config from Claude Code settings (see below)
+4. Sync MCP servers from `claude/mcp-servers.json` to both Claude and Codex
 
 The script is safe to re-run — it backs up any existing files before overwriting.
 
@@ -73,6 +75,55 @@ The script is safe to re-run — it backs up any existing files before overwriti
 - `claude-workspace/CLAUDE.md` → `~/git/.copilot/copilot-instructions.md`
 
 No separate Copilot config directory is needed — edit the `claude/` files and re-run `install.sh` to sync both tools.
+
+## MCP Sync (Claude + Codex)
+
+`install.sh` treats `claude/mcp-servers.json` as the source of truth, then writes:
+
+- `~/.claude.json` → `.mcpServers`
+- `~/.codex/config.toml` → managed `[mcp_servers.*]` block
+
+Do not put raw secrets in this repository.
+
+### Secrets via inherited env
+
+MCP subprocesses inherit the parent process env, so the cleanest way to pass
+tokens is to export them in your shell rather than declaring them in
+`mcp-servers.json`. For example, in `~/.zshrc`:
+
+```bash
+export GITHUB_PERSONAL_ACCESS_TOKEN=$(gh auth token 2>/dev/null)
+```
+
+This keeps tokens out of `~/.claude.json` and `~/.codex/config.toml` on disk.
+Rotating `gh auth` picks up automatically on the next shell.
+
+If you still need to declare a literal `env: { KEY: "${VAR}" }` block for a
+server (for example, when the server requires a differently named var),
+`install.sh` resolves `${VAR}` placeholders at install time and warns about
+unset ones.
+
+Current servers:
+
+- `github` — repo/issue/PR tools; reads `GITHUB_PERSONAL_ACCESS_TOKEN` from inherited env
+- `serena` — semantic code search and edit over LSP/symbol index
+- `playwright` — browser automation for UI testing
+
+### Per-target arg overrides
+
+A server entry may include `<target>Args` (e.g. `codexArgs`) to fully replace
+`args` when syncing for that target. `install.sh` passes the target name to
+`resolve_mcp_source`, and the base `args` is used when no override exists.
+
+Example — Serena uses a different `--context` per client:
+
+```json
+"serena": {
+  "command": "uvx",
+  "args": ["--from", "git+...", "serena", "start-mcp-server", "--context", "ide-assistant"],
+  "codexArgs": ["--from", "git+...", "serena", "start-mcp-server", "--context", "codex"]
+}
+```
 
 ### Hooks
 
