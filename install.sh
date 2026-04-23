@@ -463,6 +463,17 @@ if [ -d "$DOTFILES_DIR/claude" ]; then
 		done
 	fi
 
+	# Hooks: codex/hooks.json + codex/hooks/*.sh (scripts may reuse Claude's)
+	if [ -f "$DOTFILES_DIR/codex/hooks.json" ]; then
+		backup_and_link "$DOTFILES_DIR/codex/hooks.json" "$CODEX_DIR/hooks.json"
+	fi
+	if [ -d "$DOTFILES_DIR/codex/hooks" ]; then
+		mkdir -p "$CODEX_DIR/hooks"
+		for file in "$DOTFILES_DIR/codex/hooks"/*.sh; do
+			[ -f "$file" ] && backup_and_link "$file" "$CODEX_DIR/hooks/$(basename "$file")"
+		done
+	fi
+
 	# MCP servers (repo source -> Claude + Codex)
 	if [ -f "$MCP_SOURCE" ]; then
 		if command -v jq >/dev/null 2>&1; then
@@ -492,6 +503,7 @@ cleanup_broken_symlinks \
 	"$HOME/.claude/rules" \
 	"$HOME/.claude/skills" \
 	"$HOME/.agents/skills" \
+	"$HOME/.codex/hooks" \
 	"$HOME/.copilot/skills" \
 	"$HOME/.copilot/hooks" \
 	"$HOME/.copilot/rules"
