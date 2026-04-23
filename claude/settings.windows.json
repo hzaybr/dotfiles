@@ -44,15 +44,6 @@
         "hooks": [
           {
             "type": "command",
-            "command": "$HOME/.claude/hooks/post-tsc-check.sh"
-          }
-        ]
-      },
-      {
-        "matcher": "Edit",
-        "hooks": [
-          {
-            "type": "command",
             "command": "$HOME/.claude/hooks/post-console-log.sh"
           }
         ]

@@ -239,6 +239,20 @@ sync_codex_mcp() {
 	log_info "Synced Codex MCP servers to $dest"
 }
 
+# Remove broken symlinks (and resulting empty subdirs) from managed directories.
+# Prevents drift when a source file under claude/ is deleted or renamed.
+cleanup_broken_symlinks() {
+	for dir in "$@"; do
+		[ -d "$dir" ] || continue
+		while IFS= read -r link; do
+			[ -n "$link" ] || continue
+			/bin/rm -f "$link"
+			log_info "Removed orphan symlink $link"
+		done < <(find "$dir" -type l ! -exec test -e {} \; -print 2>/dev/null)
+		find "$dir" -mindepth 1 -type d -empty -delete 2>/dev/null
+	done
+}
+
 echo "=========================================="
 echo "        Dotfiles Installation Script"
 echo "=========================================="
@@ -470,6 +484,17 @@ if [ -d "$DOTFILES_DIR/claude-workspace" ] && [ -d "$WORKSPACE_DIR" ]; then
 	mkdir -p "$WORKSPACE_DIR/.copilot"
 	backup_and_link "$DOTFILES_DIR/claude-workspace/CLAUDE.md" "$WORKSPACE_DIR/.copilot/copilot-instructions.md"
 fi
+
+cleanup_broken_symlinks \
+	"$HOME/.claude/commands" \
+	"$HOME/.claude/hooks" \
+	"$HOME/.claude/agents" \
+	"$HOME/.claude/rules" \
+	"$HOME/.claude/skills" \
+	"$HOME/.agents/skills" \
+	"$HOME/.copilot/skills" \
+	"$HOME/.copilot/hooks" \
+	"$HOME/.copilot/rules"
 
 echo ""
 echo "=========================================="
