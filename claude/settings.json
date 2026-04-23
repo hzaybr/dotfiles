@@ -62,6 +62,15 @@
         "hooks": [
           {
             "type": "command",
+            "command": "$HOME/.claude/hooks/post-pyright.sh"
+          }
+        ]
+      },
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
             "command": "$HOME/.claude/hooks/post-stylua.sh"
           }
         ]
@@ -81,6 +90,16 @@
           {
             "type": "command",
             "command": "$HOME/.claude/hooks/post-notify-macos.sh"
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "$HOME/.claude/hooks/stop-project-check.sh"
           }
         ]
       }
