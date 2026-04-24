@@ -21,8 +21,6 @@ theme = Catppuccin Mocha
 theme = Cursor Dark
 theme = Vesper
 adjust-cell-height = 2
-background-opacity = 0.94
-background-blur = macos-glass-regular
 
 # ----- font codepoint maps (TC)-----
 font-codepoint-map = U+4E00-U+9FFF,U+3000-U+303F,U+FF00-U+FFEF,U+FE30-U+FE4F=Heiti TC
