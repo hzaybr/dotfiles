@@ -19,3 +19,6 @@ Thumbs.db
 
 # Local overrides (create these for machine-specific settings)
 zsh/.zshrc.local
+
+# Plugin lockfiles (let each machine track its own plugin versions)
+nvim/lazy-lock.json
