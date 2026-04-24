@@ -83,36 +83,6 @@
             "command": "$HOME/.claude/hooks/post-shfmt.sh"
           }
         ]
-      },
-      {
-        "matcher": "Bash",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "$HOME/.claude/hooks/post-notify-macos.sh"
-          }
-        ]
-      }
-    ],
-    "Stop": [
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "$HOME/.claude/hooks/stop-project-check.sh"
-          }
-        ]
-      }
-    ],
-    "Notification": [
-      {
-        "matcher": "permission_prompt",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "$HOME/.claude/hooks/notify-permission.sh"
-          }
-        ]
       }
     ]
   },
@@ -135,5 +105,7 @@
         "repo": "anthropics/claude-plugins-official"
       }
     }
-  }
+  },
+  "theme": "dark-daltonized",
+  "editorMode": "vim"
 }

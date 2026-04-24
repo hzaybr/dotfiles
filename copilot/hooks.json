@@ -43,11 +43,6 @@
         "type": "command",
         "bash": "$HOME/.copilot/hooks/post-shfmt.sh",
         "comment": "Run shfmt on shell files"
-      },
-      {
-        "type": "command",
-        "bash": "$HOME/.copilot/hooks/post-notify-macos.sh",
-        "comment": "macOS notification when Bash commands complete"
       }
     ]
   }
