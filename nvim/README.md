@@ -26,14 +26,14 @@ A [Nerd Font](https://www.nerdfonts.com/) is required for icons. Recommended: **
 
 ### CLI Tools
 
-- macOS: `brew install fzf ripgrep shfmt stylua lua-language-server fixjson`
-- Linux (Debian/Ubuntu): `sudo apt install fzf ripgrep`
+- macOS: `brew install fzf ripgrep shfmt stylua lua-language-server imagemagick`
+- Linux (Debian/Ubuntu): `sudo apt install fzf ripgrep imagemagick`
   - shfmt, stylua, lua-language-server: install from GitHub releases
 
-### Language Servers (npm-based)
+### Language Servers & Formatters (npm-based)
 
 ```bash
-bun install -g bash-language-server yaml-language-server dockerfile-language-server-nodejs typescript-language-server prettier prettierd svelte-language-server @tailwindcss/language-server vscode-langservers-extracted
+bun install -g bash-language-server yaml-language-server dockerfile-language-server-nodejs typescript-language-server prettier @fsouza/prettierd svelte-language-server @tailwindcss/language-server vscode-langservers-extracted fixjson
 ```
 
 ### Python Tools
