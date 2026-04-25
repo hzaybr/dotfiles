@@ -12,7 +12,11 @@
         "serena",
         "start-mcp-server",
         "--context",
-        "ide-assistant"
+        "ide-assistant",
+        "--enable-web-dashboard",
+        "False",
+        "--open-web-dashboard",
+        "False"
       ],
       "codexArgs": [
         "--from",
@@ -20,7 +24,11 @@
         "serena",
         "start-mcp-server",
         "--context",
-        "codex"
+        "codex",
+        "--enable-web-dashboard",
+        "False",
+        "--open-web-dashboard",
+        "False"
       ]
     },
     "playwright": {

@@ -37,38 +37,6 @@ backup_and_link() {
 	log_info "Linked $dest -> $src"
 }
 
-# Ensure stable Serena defaults without taking over the whole config file.
-# We intentionally patch only a few keys because Serena also stores machine-
-# and session-specific state in ~/.serena/serena_config.yml.
-ensure_serena_config() {
-	local config="$HOME/.serena/serena_config.yml"
-
-	mkdir -p "$(dirname "$config")"
-	if [ ! -f "$config" ]; then
-		cat >"$config" <<'EOF'
-web_dashboard: false
-web_dashboard_open_on_launch: false
-EOF
-		log_info "Created $config with Serena dashboard disabled"
-		return
-	fi
-
-	if grep -q '^web_dashboard:' "$config"; then
-		sed -i.bak 's/^web_dashboard:.*/web_dashboard: false/' "$config"
-	else
-		printf '\nweb_dashboard: false\n' >>"$config"
-	fi
-
-	if grep -q '^web_dashboard_open_on_launch:' "$config"; then
-		sed -i.bak 's/^web_dashboard_open_on_launch:.*/web_dashboard_open_on_launch: false/' "$config"
-	else
-		printf 'web_dashboard_open_on_launch: false\n' >>"$config"
-	fi
-
-	/bin/rm -f "$config.bak"
-	log_info "Ensured Serena dashboard is disabled in $config"
-}
-
 # Merge CLAUDE.md + rules/*.md into a single instructions file.
 # Usage: merge_instructions <dest>
 merge_instructions() {
@@ -341,9 +309,6 @@ if [ -f "$DOTFILES_DIR/ghostty/config" ]; then
 	fi
 	backup_and_link "$DOTFILES_DIR/ghostty/config" "$GHOSTTY_DIR/config"
 fi
-
-# Serena
-ensure_serena_config
 
 # Neovim
 if [ -d "$DOTFILES_DIR/nvim" ]; then
