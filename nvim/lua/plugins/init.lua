@@ -1,7 +1,7 @@
 return {
   {
     "stevearc/conform.nvim",
-    event = "BufWritePre", -- uncomment for format on save
+    event = "BufWritePre",
     opts = require "configs.conform",
   },
 
@@ -16,7 +16,7 @@ return {
     "github/copilot.vim",
     lazy = false,
     config = function()
-      vim.g.copilot_enable = true
+      vim.g.copilot_enabled = 1
       vim.g.copilot_no_tab_map = true
       vim.g.copilot_assume_mapped = true
 

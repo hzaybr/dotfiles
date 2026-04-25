@@ -26,9 +26,9 @@ A [Nerd Font](https://www.nerdfonts.com/) is required for icons. Recommended: **
 
 ### CLI Tools
 
-- macOS: `brew install fzf ripgrep shfmt stylua lua-language-server imagemagick`
+- macOS: `brew install fzf ripgrep shfmt stylua lua-language-server marksman tree-sitter-cli imagemagick`
 - Linux (Debian/Ubuntu): `sudo apt install fzf ripgrep imagemagick`
-  - shfmt, stylua, lua-language-server: install from GitHub releases
+  - shfmt, stylua, lua-language-server, marksman, tree-sitter-cli: install from GitHub releases
 
 ### Language Servers & Formatters (npm-based)
 
