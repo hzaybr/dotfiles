@@ -37,6 +37,21 @@ backup_and_link() {
 	log_info "Linked $dest -> $src"
 }
 
+backup_and_copy() {
+	local src="$1"
+	local dest="$2"
+
+	if [ -e "$dest" ] || [ -L "$dest" ]; then
+		mkdir -p "$BACKUP_DIR"
+		log_warn "Backing up existing $dest to $BACKUP_DIR/"
+		mv "$dest" "$BACKUP_DIR/"
+	fi
+
+	mkdir -p "$(dirname "$dest")"
+	cp "$src" "$dest"
+	log_info "Copied $src -> $dest"
+}
+
 # Merge CLAUDE.md + rules/*.md into a single instructions file.
 # Usage: merge_instructions <dest>
 merge_instructions() {
@@ -422,15 +437,26 @@ if [ -d "$DOTFILES_DIR/claude" ]; then
 	fi
 fi
 
-# Codex CLI (symlinks to Claude source of truth)
+# Codex CLI
 CODEX_DIR="$HOME/.codex"
+CODEX_SOURCE_DIR="$DOTFILES_DIR/codex"
 CODEX_SKILLS_DIR="$HOME/.agents/skills"
 MCP_SOURCE="$DOTFILES_DIR/claude/mcp-servers.json"
-if [ -d "$DOTFILES_DIR/claude" ]; then
+if [ -d "$DOTFILES_DIR/claude" ] || [ -d "$CODEX_SOURCE_DIR" ]; then
 	mkdir -p "$CODEX_DIR" "$CODEX_SKILLS_DIR"
 
-	# AGENTS.md (CLAUDE.md + rules/*.md merged into one file)
-	merge_instructions "$CODEX_DIR/AGENTS.md"
+	# AGENTS.md
+	if [ -f "$CODEX_SOURCE_DIR/AGENTS.md" ]; then
+		backup_and_link "$CODEX_SOURCE_DIR/AGENTS.md" "$CODEX_DIR/AGENTS.md"
+	elif [ -d "$DOTFILES_DIR/claude" ]; then
+		# Backward-compatible fallback for older checkouts without codex/AGENTS.md.
+		merge_instructions "$CODEX_DIR/AGENTS.md"
+	fi
+
+	# Base config is copied instead of symlinked so MCP env resolution never mutates the repo.
+	if [ -f "$CODEX_SOURCE_DIR/config.toml" ]; then
+		backup_and_copy "$CODEX_SOURCE_DIR/config.toml" "$CODEX_DIR/config.toml"
+	fi
 
 	# Skills (~/.agents/skills/<name>/ -> claude/skills/<name>/)
 	if [ -d "$DOTFILES_DIR/claude/skills" ]; then

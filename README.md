@@ -1,6 +1,6 @@
 # Dotfiles
 
-Personal configuration files for zsh, tmux, git, ghostty, neovim, Claude Code, and GitHub Copilot CLI.
+Personal configuration files for zsh, tmux, git, ghostty, neovim, Claude Code, Codex CLI, and GitHub Copilot CLI.
 
 ## Contents
 
@@ -24,6 +24,10 @@ dotfiles/
 │   ├── commands/           # Custom commands (tdd, plan, etc.)
 │   ├── agents/             # Agent definitions
 │   └── skills/             # Skill definitions
+├── codex/
+│   ├── AGENTS.md           # Global Codex instructions
+│   ├── config.toml         # Base Codex CLI configuration
+│   └── README.md           # Codex setup notes
 ├── copilot/
 │   └── README.md           # Copilot CLI notes
 ├── claude-workspace/
@@ -58,7 +62,8 @@ The script will:
 1. Backup existing config files to `~/.dotfiles_backup/<timestamp>/`
 2. Create symbolic links to the dotfiles
 3. Generate GitHub Copilot CLI config from Claude Code settings (see below)
-4. Sync MCP servers from `claude/mcp-servers.json` to both Claude and Codex
+4. Install repo-managed Codex instructions and base config from `codex/`
+5. Sync MCP servers from `claude/mcp-servers.json` to both Claude and Codex
 
 The script is safe to re-run — it backs up any existing files before overwriting.
 
@@ -74,12 +79,23 @@ The script is safe to re-run — it backs up any existing files before overwriti
 
 No separate Copilot config directory is needed — edit the `claude/` files and re-run `install.sh` to sync both tools.
 
+## Codex CLI
+
+Codex has its own repo-managed config directory:
+
+- `codex/AGENTS.md` → `~/.codex/AGENTS.md` as a symlink
+- `codex/config.toml` → `~/.codex/config.toml` as a copied base config
+
+`config.toml` is copied instead of symlinked because `install.sh` appends the managed MCP server block after install. That keeps resolved environment values and machine-local runtime changes out of the repository.
+
+Runtime files such as `auth.json`, `history.jsonl`, `sessions/`, logs, cache files, and sqlite state should stay in `~/.codex/` only.
+
 ## MCP Sync (Claude + Codex)
 
-`install.sh` treats `claude/mcp-servers.json` as the source of truth, then writes:
+`install.sh` treats `claude/mcp-servers.json` as the source of truth for MCP servers, then writes:
 
 - `~/.claude.json` → `.mcpServers`
-- `~/.codex/config.toml` → managed `[mcp_servers.*]` block
+- `~/.codex/config.toml` → managed `[mcp_servers.*]` block appended to the base config from `codex/config.toml`
 
 Do not put raw secrets in this repository.
 

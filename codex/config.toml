@@ -1,0 +1,46 @@
+# Codex CLI configuration
+# MCP servers are appended by install.sh from claude/mcp-servers.json.
+model = "gpt-5.5"
+network_access = true
+personality = "pragmatic"
+model_reasoning_effort = "xhigh"
+
+[projects."/Users/a122989/test/dp_master"]
+trust_level = "trusted"
+
+[projects."/Users/a122989/test/yestoday/codex"]
+trust_level = "trusted"
+
+[projects."/Users/a122989/test/v2-design-doc"]
+trust_level = "trusted"
+
+[projects."/Users/a122989/git/side-agent-dev"]
+trust_level = "trusted"
+
+[projects."/Users/a122989/git/neggapui"]
+trust_level = "trusted"
+
+[projects."/Users/a122989/git/negg-a2ui-poc"]
+trust_level = "trusted"
+
+[projects."/Users/a122989/git/spaid"]
+trust_level = "trusted"
+
+[projects."/Users/a122989/git/spaid-dev"]
+trust_level = "trusted"
+
+[projects."/Users/a122989/git/dotfiles"]
+trust_level = "trusted"
+
+[projects."/Users/a122989/test/tmp_spaid"]
+trust_level = "trusted"
+
+[projects."/Users/a122989/test/spaid-demo"]
+trust_level = "trusted"
+
+[projects."/Users/a122989/garden/study"]
+trust_level = "trusted"
+
+[notice.model_migrations]
+gpt-5-codex = "gpt-5.3-codex"
+"gpt-5.3-codex" = "gpt-5.4"
