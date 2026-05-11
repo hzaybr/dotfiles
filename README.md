@@ -17,17 +17,15 @@ dotfiles/
 ├── nvim/                   # Neovim configuration (NvChad-based)
 ├── claude/
 │   ├── CLAUDE.md           # Global Claude Code instructions
-│   ├── settings.json       # Hooks and plugins
+│   ├── settings.json       # Plugins and UI settings
 │   ├── mcp-servers.json    # MCP server source of truth (no secrets)
 │   ├── statusline.sh       # Status line script
 │   ├── rules/              # Coding style and security rules
 │   ├── commands/           # Custom commands (tdd, plan, etc.)
-│   ├── hooks/              # Pre/post tool-use hook scripts
 │   ├── agents/             # Agent definitions
 │   └── skills/             # Skill definitions
 ├── copilot/
-│   ├── hooks.json          # Copilot hooks configuration
-│   └── hooks/              # Copilot-specific hook scripts
+│   └── README.md           # Copilot CLI notes
 ├── claude-workspace/
 │   └── CLAUDE.md           # Shared instructions for all ~/git/ projects
 ├── install.sh              # Installation script
@@ -124,23 +122,6 @@ Example — Serena uses a different `--context` per client:
   "codexArgs": ["--from", "git+...", "serena", "start-mcp-server", "--context", "codex"]
 }
 ```
-
-### Hooks
-
-Hooks are **not** shared between Claude Code and Copilot CLI due to format differences:
-
-- Claude hooks live in `claude/hooks/` — use `hookSpecificOutput` for feedback to the agent
-- Copilot hooks live in `copilot/hooks/` — `postToolUse` output is ignored by Copilot, so warnings go to stderr only
-
-Both sets cover the same functionality:
-
-- **PreToolUse** — auto-approve read-only bash commands, deny git push, auto-approve reads and web operations
-- **PostToolUse** — prettier, tsc, console.log, ruff, stylua, shfmt, macOS desktop notifications
-- **Notification** (Claude only) — permission prompt alerts when terminal is not in foreground
-
-Hooks that call `osascript` or Hammerspoon CLI (`hs`) are wrapped with `perl -e 'alarm 3; exec @ARGV'` to prevent hangs (e.g. when Hammerspoon is not running).
-
-`install.sh` installs both to their respective locations. Copilot CLI loads global hooks from `~/.copilot/hooks/*.json`, so no per-repo setup is needed.
 
 ## Dependencies
 

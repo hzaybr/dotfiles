@@ -195,21 +195,6 @@ if (Test-Path $claudeSourceDir) {
         }
     }
 
-    # hooks
-    $hooksDir = Join-Path $claudeSourceDir "hooks"
-    if (Test-Path $hooksDir) {
-        $destHooksDir = Join-Path $claudeDir "hooks"
-        if (-not (Test-Path $destHooksDir)) {
-            New-Item -ItemType Directory -Path $destHooksDir -Force | Out-Null
-        }
-        # Install all hooks except macOS-only ones
-        Get-ChildItem -Path $hooksDir -File | Where-Object {
-            $_.Name -notmatch '^(notify-permission|post-notify-macos)\.sh$'
-        } | ForEach-Object {
-            Backup-AndLink -Source $_.FullName -Destination (Join-Path $destHooksDir $_.Name)
-        }
-    }
-
     # statusline (use Windows-specific version)
     $statusline = Join-Path $claudeSourceDir "statusline-windows.sh"
     if (Test-Path $statusline) {
@@ -286,29 +271,6 @@ if (Test-Path $claudeSourceDir) {
                 Backup-AndLink -Source $skillMd -Destination (Join-Path $destSkillsDir "$skillName.instructions.md")
             }
         }
-    }
-
-    # Hooks (Copilot-specific, skip macOS-only)
-    $copilotHooksDir = Join-Path $DotfilesDir "copilot\hooks"
-    if (Test-Path $copilotHooksDir) {
-        $destHooksDir = Join-Path $copilotDir "hooks"
-        if (-not (Test-Path $destHooksDir)) {
-            New-Item -ItemType Directory -Path $destHooksDir -Force | Out-Null
-        }
-        Get-ChildItem -Path $copilotHooksDir -File | Where-Object {
-            $_.Name -notmatch 'notify-macos'
-        } | ForEach-Object {
-            Backup-AndLink -Source $_.FullName -Destination (Join-Path $destHooksDir $_.Name)
-        }
-    }
-
-    # hooks.json (use Windows version if exists, otherwise filter macOS hooks from original)
-    $copilotHooksJson = Join-Path $DotfilesDir "copilot\hooks.windows.json"
-    if (-not (Test-Path $copilotHooksJson)) {
-        $copilotHooksJson = Join-Path $DotfilesDir "copilot\hooks.json"
-    }
-    if (Test-Path $copilotHooksJson) {
-        Backup-AndLink -Source $copilotHooksJson -Destination (Join-Path $copilotDir "hooks\hooks.json")
     }
 
     # Agents (merge multiple .md into single AGENTS.md)

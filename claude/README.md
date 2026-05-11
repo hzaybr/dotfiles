@@ -12,12 +12,6 @@ curl -fsSL https://claude.ai/install.sh | bash
 brew install --cask claude-code
 ```
 
-### Formatters (for hooks)
-
-- macOS: `brew install stylua shfmt`
-- prettier: `bun install -g prettier`
-- ruff: `uv tool install ruff`
-
 ## Install
 
 ```bash
@@ -30,6 +24,5 @@ brew install --cask claude-code
 - Global coding instructions (CLAUDE.md)
 - Coding style and security rules
 - MCP servers (from `mcp-servers.json`)
-- Pre/post tool-use hooks (auto-approve reads, format on save, notifications)
 - LSP plugins: pyright, typescript, lua, rust-analyzer
 - Custom skills and agent definitions

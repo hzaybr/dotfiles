@@ -360,18 +360,6 @@ if [ -d "$DOTFILES_DIR/claude" ]; then
 		done
 	fi
 
-	# hooks (skip Windows-specific ones)
-	if [ -d "$DOTFILES_DIR/claude/hooks" ]; then
-		mkdir -p "$CLAUDE_DIR/hooks"
-		for file in "$DOTFILES_DIR/claude/hooks"/*.sh; do
-			[ -f "$file" ] || continue
-			case "$(basename "$file")" in
-			*-windows.sh) continue ;;
-			esac
-			backup_and_link "$file" "$CLAUDE_DIR/hooks/$(basename "$file")"
-		done
-	fi
-
 	# agents
 	if [ -d "$DOTFILES_DIR/claude/agents" ]; then
 		mkdir -p "$CLAUDE_DIR/agents"
@@ -408,17 +396,6 @@ if [ -d "$DOTFILES_DIR/claude" ]; then
 				backup_and_link "${skill_dir}SKILL.md" "$COPILOT_DIR/skills/$skill_name.instructions.md"
 			fi
 		done
-	fi
-
-	# Hooks (Copilot-specific versions)
-	if [ -d "$DOTFILES_DIR/copilot/hooks" ]; then
-		mkdir -p "$COPILOT_DIR/hooks"
-		for file in "$DOTFILES_DIR/copilot/hooks"/*.sh; do
-			[ -f "$file" ] && backup_and_link "$file" "$COPILOT_DIR/hooks/$(basename "$file")"
-		done
-	fi
-	if [ -f "$DOTFILES_DIR/copilot/hooks.json" ]; then
-		backup_and_link "$DOTFILES_DIR/copilot/hooks.json" "$COPILOT_DIR/hooks/hooks.json"
 	fi
 
 	# Agents (merge multiple files into single AGENTS.md)
@@ -463,17 +440,6 @@ if [ -d "$DOTFILES_DIR/claude" ]; then
 		done
 	fi
 
-	# Hooks: codex/hooks.json + codex/hooks/*.sh (scripts may reuse Claude's)
-	if [ -f "$DOTFILES_DIR/codex/hooks.json" ]; then
-		backup_and_link "$DOTFILES_DIR/codex/hooks.json" "$CODEX_DIR/hooks.json"
-	fi
-	if [ -d "$DOTFILES_DIR/codex/hooks" ]; then
-		mkdir -p "$CODEX_DIR/hooks"
-		for file in "$DOTFILES_DIR/codex/hooks"/*.sh; do
-			[ -f "$file" ] && backup_and_link "$file" "$CODEX_DIR/hooks/$(basename "$file")"
-		done
-	fi
-
 	# MCP servers (repo source -> Claude + Codex)
 	if [ -f "$MCP_SOURCE" ]; then
 		if command -v jq >/dev/null 2>&1; then
@@ -498,14 +464,11 @@ fi
 
 cleanup_broken_symlinks \
 	"$HOME/.claude/commands" \
-	"$HOME/.claude/hooks" \
 	"$HOME/.claude/agents" \
 	"$HOME/.claude/rules" \
 	"$HOME/.claude/skills" \
 	"$HOME/.agents/skills" \
-	"$HOME/.codex/hooks" \
 	"$HOME/.copilot/skills" \
-	"$HOME/.copilot/hooks" \
 	"$HOME/.copilot/rules"
 
 echo ""
