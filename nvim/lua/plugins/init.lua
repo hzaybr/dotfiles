@@ -96,7 +96,11 @@ return {
     lazy = false,
     opts = {
       backend = "kitty",
-      max_width_window_percentage = 60,
+      max_width = nil,
+      max_height = nil,
+      max_width_window_percentage = 100,
+      max_height_window_percentage = 80,
+      window_overlap_clear_enabled = true,
       integrations = {
         markdown = {
           enabled = true,
