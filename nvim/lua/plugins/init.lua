@@ -80,7 +80,7 @@ return {
     dependencies = { "nvim-treesitter/nvim-treesitter", "nvim-tree/nvim-web-devicons" },
     ft = { "markdown" },
     opts = {
-      code = { style = "language" },
+      code = { style = "full" },
     },
   },
   {

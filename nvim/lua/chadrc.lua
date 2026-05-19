@@ -6,10 +6,12 @@
 local M = {}
 
 M.base46 = {
-  theme = "monochrome",
+  theme = "mountain",
 
   hl_override = {
     Visual = { bg = "#383850" },
+    RenderMarkdownCode = { bg = "one_bg" },
+    RenderMarkdownCodeInline = { bg = "one_bg" },
   },
 }
 
