@@ -140,16 +140,25 @@ resolve_mcp_source() {
 			mcpServers: (
 				(.mcpServers // . // {})
 				| with_entries(
-					.value = {
-						command: .value.command,
-						args: (
-							if (.value[$override_key] // null) != null
-							then .value[$override_key]
-							else (.value.args // [])
-							end
-						),
-						env: (.value.env | resolve_env)
-					}
+					.value = (
+						if (.value.url // null) != null then
+							{
+								type: (.value.type // "http"),
+								url: .value.url
+							}
+						else
+							{
+								command: .value.command,
+								args: (
+									if (.value[$override_key] // null) != null
+									then .value[$override_key]
+									else (.value.args // [])
+									end
+								),
+								env: (.value.env | resolve_env)
+							}
+						end
+					)
 				)
 			)
 		}
@@ -216,10 +225,17 @@ sync_codex_mcp() {
 	resolve_mcp_source "$source" "$resolved" codex
 
 	if [ -f "$dest" ]; then
+		# Self-healing: strip the managed marker lines wherever they are (Codex
+		# rewrites config.toml at runtime and may drop one of them), and strip
+		# every [mcp_servers.*] table since all MCP servers are managed by
+		# mcp-servers.json. This is a no-op on a freshly copied base config.
 		awk -v begin="$begin_marker" -v end="$end_marker" '
-			$0 == begin { skip=1; next }
-			$0 == end { skip=0; next }
-			!skip { print }
+			$0 == begin { next }
+			$0 == end { next }
+			/^\[mcp_servers/ { inmcp=1; next }
+			/^\[/ { inmcp=0 }
+			inmcp { next }
+			{ print }
 		' "$dest" >"$base_tmp"
 	else
 		: >"$base_tmp"
@@ -228,13 +244,17 @@ sync_codex_mcp() {
 	jq -r '
 		(.mcpServers // {})
 		| to_entries[]
-		| select((.value.command // "") != "")
+		| select((.value.command // "") != "" or (.value.url // "") != "")
 		| "[mcp_servers.\(.key | @json)]",
-			"command = \(.value.command | @json)",
-			(if ((.value.args // []) | length) > 0 then "args = \((.value.args // []) | @json)" else empty end),
-			(if ((.value.env // {}) | length) > 0 then
-				"env = { " + ((.value.env // {}) | to_entries | map((.key | @json) + " = " + (.value | @json)) | join(", ")) + " }"
-			else empty end),
+			(if (.value.url // "") != "" then
+				"url = \(.value.url | @json)"
+			else
+				"command = \(.value.command | @json)",
+				(if ((.value.args // []) | length) > 0 then "args = \((.value.args // []) | @json)" else empty end),
+				(if ((.value.env // {}) | length) > 0 then
+					"env = { " + ((.value.env // {}) | to_entries | map((.key | @json) + " = " + (.value | @json)) | join(", ")) + " }"
+				else empty end)
+			end),
 			""
 	' "$resolved" >"$block_tmp"
 
