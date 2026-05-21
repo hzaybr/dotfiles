@@ -147,7 +147,7 @@ alias lt='ls -tl'
 
 alias cls='clear && ls'
 alias cp='cp -i'
-alias du='du -h --max-depth=1'
+alias du='du -h'
 alias h='history | grep'
 alias mv='mv -i'
 alias rm='_rm'

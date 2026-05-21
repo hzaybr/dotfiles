@@ -92,7 +92,6 @@ return {
   },
   {
     "3rd/image.nvim",
-    cond = vim.fn.has "mac" == 1,
     lazy = false,
     opts = {
       backend = "kitty",
