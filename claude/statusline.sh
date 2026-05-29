@@ -1,13 +1,17 @@
 #!/bin/zsh
-input=$(cat)
 
-MODEL_DISPLAY=$(echo "$input" | jq -r '.model.id')
+# Basic info 
+input=$(cat)
+# Claude Code captures stdout (it is a pipe, not a TTY), so `tput cols` cannot
+# read the real width. Claude sets COLUMNS to the terminal width (v2.1.153+);
+# fall back to tput, then 80, for older versions or early-startup renders.
+TERM_WIDTH=${COLUMNS:-$(tput cols 2>/dev/null || echo 80)}
+
+MODEL_DISPLAY=$(echo "$input" | jq -r '.model.display_name // .model.id')
 CURRENT_DIR=$(echo "$input" | jq -r '.workspace.current_dir')
 CONTEXT_REMAINING=$(echo "$input" | jq -r '.context_window.remaining_percentage // empty')
-
 SHORT_DIR=$(echo "$CURRENT_DIR" | sed "s|^$HOME|~|")
-LEFT_PLAIN="%F{blue}󰣙 ${SHORT_DIR}%f"
-USER_HOST="$(whoami)@$(hostname -s)"
+HOST_NAME="󰣙 $(hostname -s)"
 
 # Git info
 GIT_PART=""
@@ -29,7 +33,7 @@ if git rev-parse --git-dir >/dev/null 2>&1; then
   fi
 fi
 
-# Right side: model + context
+# Context window remaining
 if [ -n "$CONTEXT_REMAINING" ]; then
   if [ "$CONTEXT_REMAINING" -gt 50 ]; then
     CTX_COLOR="green"
@@ -39,9 +43,46 @@ if [ -n "$CONTEXT_REMAINING" ]; then
     CTX_ICON="󱘺"
   else
     CTX_COLOR="red"
+    CTX_ICON="󱘺"
   fi
-  CONTEXT_REMAINING="%F{${CTX_COLOR}} ${CTX_ICON} ${CONTEXT_REMAINING}%%%f"
+  CONTEXT_REMAINING="|%F{${CTX_COLOR}} ${CTX_ICON} ${CONTEXT_REMAINING}%%%f"
 fi
-RIGHT_PLAIN="${MODEL_DISPLAY} | ${CONTEXT_REMAINING}"
 
-print -P -- "${LEFT_PLAIN}${GIT_PART} | ${RIGHT_PLAIN}"
+RIGHT_PLAIN="${MODEL_DISPLAY}${CONTEXT_REMAINING:+ ${CONTEXT_REMAINING}}"
+
+# Visible width of a prompt string: expand prompt escapes, strip ANSI codes,
+# then add 1 column per Nerd Font icon (they render two cells wide).
+visible_length() {
+  emulate -L zsh
+  setopt extendedglob
+  local stripped=${${(%)1}//$'\e'\[[0-9;]##[a-zA-Z]/}
+  local base=${#stripped}
+  local no_icons=${stripped//[󰣙󰘬󰆼󱘺]/}
+  local extra=$((base - ${#no_icons}))
+  print -r -- $((base + extra))
+}
+
+RIGHT_LEN=$(visible_length "$RIGHT_PLAIN")
+
+# Truncate the directory (keeping its tail) when the whole line would not fit.
+# Reserve 1 trailing column so the terminal never wraps on the final cell.
+HOST_PART="%F{15}%B${HOST_NAME:u}%f%b"
+FIXED_LEN=$(( $(visible_length "$HOST_PART") + 1 + $(visible_length "$GIT_PART") ))
+DIR_BUDGET=$((TERM_WIDTH - 2 - RIGHT_LEN - FIXED_LEN))
+if (( ${#SHORT_DIR} > DIR_BUDGET )); then
+  if (( DIR_BUDGET > 1 )); then
+    TAIL=$((DIR_BUDGET - 1))
+    SHORT_DIR="…${SHORT_DIR[-TAIL,-1]}"
+  else
+    SHORT_DIR="…"
+  fi
+fi
+
+LEFT_PLAIN="${HOST_PART} %F{blue}${SHORT_DIR}%f${GIT_PART}"
+LEFT_LEN=$(visible_length "$LEFT_PLAIN")
+
+SPACING=$((TERM_WIDTH - 1 - LEFT_LEN - RIGHT_LEN))
+(( SPACING < 1 )) && SPACING=1
+
+STATUS_LINE="${LEFT_PLAIN}$(printf '%*s' $SPACING)${RIGHT_PLAIN}"
+print -P -- "${STATUS_LINE}"
