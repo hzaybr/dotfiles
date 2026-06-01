@@ -8,6 +8,7 @@ input=$(cat)
 TERM_WIDTH=${COLUMNS:-$(tput cols 2>/dev/null || echo 80)}
 
 MODEL_DISPLAY=$(echo "$input" | jq -r '.model.display_name // .model.id')
+MODEL_DISPLAY=${MODEL_DISPLAY%%" ("*}  # drop trailing parenthetical, e.g. " (1M context)"
 CURRENT_DIR=$(echo "$input" | jq -r '.workspace.current_dir')
 CONTEXT_REMAINING=$(echo "$input" | jq -r '.context_window.remaining_percentage // empty')
 SHORT_DIR=$(echo "$CURRENT_DIR" | sed "s|^$HOME|~|")
@@ -64,10 +65,18 @@ visible_length() {
 
 RIGHT_LEN=$(visible_length "$RIGHT_PLAIN")
 
+# Hide the hostname on machines that export STATUSLINE_HIDE_HOST=1 (set it
+# per-machine via shell or ~/.claude/settings.local.json, not the public repo).
+# The trailing space lives inside HOST_PART so it vanishes too when hidden.
+if [[ $STATUSLINE_HIDE_HOST == (1|true|yes) ]]; then
+  HOST_PART=""
+else
+  HOST_PART="%F{15}%B${HOST_NAME:u}%f%b "
+fi
+
 # Truncate the directory (keeping its tail) when the whole line would not fit.
 # Reserve 1 trailing column so the terminal never wraps on the final cell.
-HOST_PART="%F{15}%B${HOST_NAME:u}%f%b"
-FIXED_LEN=$(( $(visible_length "$HOST_PART") + 1 + $(visible_length "$GIT_PART") ))
+FIXED_LEN=$(( $(visible_length "$HOST_PART") + $(visible_length "$GIT_PART") ))
 DIR_BUDGET=$((TERM_WIDTH - 2 - RIGHT_LEN - FIXED_LEN))
 if (( ${#SHORT_DIR} > DIR_BUDGET )); then
   if (( DIR_BUDGET > 1 )); then
@@ -78,7 +87,7 @@ if (( ${#SHORT_DIR} > DIR_BUDGET )); then
   fi
 fi
 
-LEFT_PLAIN="${HOST_PART} %F{blue}${SHORT_DIR}%f${GIT_PART}"
+LEFT_PLAIN="${HOST_PART}%F{blue}${SHORT_DIR}%f${GIT_PART}"
 LEFT_LEN=$(visible_length "$LEFT_PLAIN")
 
 SPACING=$((TERM_WIDTH - 1 - LEFT_LEN - RIGHT_LEN))
