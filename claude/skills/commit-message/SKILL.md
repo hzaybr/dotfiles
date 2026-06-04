@@ -21,15 +21,12 @@ Generate commit messages from staged changes using the Conventional Commits form
 ## Message Format
 
 ```
-type: subject
+type(scope): subject
 
 body (optional)
 ```
 
-**IMPORTANT:**
-
-- Do NOT use scope — always `type: subject`, never `type(scope): subject`
-- Do NOT append `Co-Authored-By` or any trailer lines
+- Scope is optional — use `type(scope): subject` to flag the affected component (lowercase) when it adds clarity, otherwise just `type: subject`. Omit it for repo-wide or obvious changes.
 
 ### Type
 
@@ -51,32 +48,11 @@ Choose the type that best describes the **intent** of the change, not just what 
 - Under 50 characters — if you can't fit it, the commit might be doing too much
 - No period at the end
 
-**Good subjects:**
-
-- `add email validation to signup form`
-- `fix race condition in websocket reconnect`
-- `remove deprecated payment API endpoints`
-
-**Bad subjects:**
-
-- `update files` (too vague)
-- `Fix bug` (what bug?)
-- `Add new feature for the user authentication system` (too long)
-
 ### Body
 
 Add a body when the **why** isn't obvious from the subject alone. The subject says _what_ changed; the body explains _why_ it matters. A good rule of thumb: if someone reading just the subject would ask "why?", add a body.
 
-**Always use bullet points** (`- `) in the body, not prose paragraphs. Each bullet should describe one logical change or reason.
-
-Typical cases that need a body:
-
-- Bug fixes (what was the root cause?)
-- Non-obvious refactors (why restructure this way?)
-- Changes that affect multiple areas
-- Decisions that trade off one thing for another
-
-Leave a blank line between subject and body. Do NOT wrap lines — keep each bullet point on a single line.
+**Always use bullet points** (`- `) in the body, not prose paragraphs. Each bullet should describe one logical change or reason. Leave a blank line between subject and body. Do NOT wrap lines — keep each bullet point on a single line.
 
 ```
 fix: reject expired refresh tokens on rotation
@@ -84,12 +60,6 @@ fix: reject expired refresh tokens on rotation
 - Expired refresh tokens were accepted during token rotation, allowing indefinite session extension
 - Validate expiry before issuing a new access token
 ```
-
-Cases that usually **don't** need a body:
-
-- `feat: add dark mode toggle` (obvious)
-- `fix: typo in error message` (self-explanatory)
-- `chore: bump vite to 6.1.0` (routine)
 
 ## Analyzing Changes
 
