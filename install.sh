@@ -460,7 +460,7 @@ fi
 # Codex CLI
 CODEX_DIR="$HOME/.codex"
 CODEX_SOURCE_DIR="$DOTFILES_DIR/codex"
-CODEX_SKILLS_DIR="$HOME/.agents/skills"
+CODEX_SKILLS_DIR="$HOME/.codex/skills"
 MCP_SOURCE="$DOTFILES_DIR/claude/mcp-servers.json"
 if [ -d "$DOTFILES_DIR/claude" ] || [ -d "$CODEX_SOURCE_DIR" ]; then
 	mkdir -p "$CODEX_DIR" "$CODEX_SKILLS_DIR"
@@ -478,7 +478,7 @@ if [ -d "$DOTFILES_DIR/claude" ] || [ -d "$CODEX_SOURCE_DIR" ]; then
 		backup_and_copy "$CODEX_SOURCE_DIR/config.toml" "$CODEX_DIR/config.toml"
 	fi
 
-	# Skills (~/.agents/skills/<name>/ -> claude/skills/<name>/)
+	# Skills (~/.codex/skills/<name>/ -> claude/skills/<name>/)
 	if [ -d "$DOTFILES_DIR/claude/skills" ]; then
 		for skill_dir in "$DOTFILES_DIR/claude/skills"/*/; do
 			skill_name=$(basename "$skill_dir")
@@ -513,6 +513,7 @@ cleanup_broken_symlinks \
 	"$HOME/.claude/agents" \
 	"$HOME/.claude/rules" \
 	"$HOME/.claude/skills" \
+	"$HOME/.codex/skills" \
 	"$HOME/.agents/skills" \
 	"$HOME/.copilot/skills" \
 	"$HOME/.copilot/rules"
