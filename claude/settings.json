@@ -20,5 +20,6 @@
     }
   },
   "theme": "dark-daltonized",
-  "editorMode": "vim"
+  "editorMode": "vim",
+  "effortLevel": "xhigh"
 }

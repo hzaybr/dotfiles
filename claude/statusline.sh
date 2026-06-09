@@ -36,10 +36,10 @@ fi
 
 # Context window remaining
 if [ -n "$CONTEXT_REMAINING" ]; then
-  if [ "$CONTEXT_REMAINING" -gt 50 ]; then
+  if [ "$CONTEXT_REMAINING" -gt 70 ]; then
     CTX_COLOR="green"
     CTX_ICON="󰆼"
-  elif [ "$CONTEXT_REMAINING" -gt 20 ]; then
+  elif [ "$CONTEXT_REMAINING" -gt 40 ]; then
     CTX_COLOR="yellow"
     CTX_ICON="󱘺"
   else
