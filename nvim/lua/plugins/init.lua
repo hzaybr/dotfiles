@@ -93,6 +93,8 @@ return {
   {
     "3rd/image.nvim",
     lazy = false,
+    -- image.nvim relies on libc `ioctl` (TIOCGWINSZ) via FFI, which Windows lacks.
+    cond = vim.fn.has "win32" == 0,
     opts = {
       backend = "kitty",
       max_width = nil,
