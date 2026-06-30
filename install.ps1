@@ -199,6 +199,17 @@ function Resolve-McpSource {
     foreach ($prop in $servers.PSObject.Properties) {
         $srv = $prop.Value
 
+        # Remote (http/sse) servers have no command; preserve their fields as-is.
+        if (-not (($srv.PSObject.Properties.Name -contains 'command') -and $null -ne $srv.command)) {
+            $entry = [ordered]@{}
+            foreach ($p in $srv.PSObject.Properties) {
+                if ($p.Name -eq $overrideKey) { continue }
+                $entry[$p.Name] = $p.Value
+            }
+            $result[$prop.Name] = $entry
+            continue
+        }
+
         $serverArgs = @()
         if (($srv.PSObject.Properties.Name -contains $overrideKey) -and $null -ne $srv.$overrideKey) {
             $serverArgs = @($srv.$overrideKey)
@@ -256,10 +267,16 @@ function Sync-ClaudeMcp {
     $resolved = Resolve-McpSource -SourcePath $SourcePath -Target 'claude'
     $mcpServers = [ordered]@{}
     foreach ($name in $resolved.Keys) {
-        $mcpServers[$name] = [ordered]@{
-            command = $resolved[$name].command
-            args    = @($resolved[$name].args)
-            env     = $resolved[$name].env
+        $srv = $resolved[$name]
+        if ($srv.Contains('command')) {
+            $mcpServers[$name] = [ordered]@{
+                command = $srv.command
+                args    = @($srv.args)
+                env     = $srv.env
+            }
+        } else {
+            # Remote (http/sse) server: pass through type/url/headers.
+            $mcpServers[$name] = $srv
         }
     }
 
