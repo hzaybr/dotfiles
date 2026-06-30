@@ -1,7 +1,7 @@
 {
   "statusLine": {
     "type": "command",
-    "command": "$HOME/.claude/statusline-windows.sh",
+    "command": "powershell -NoProfile -ExecutionPolicy Bypass -File \"$HOME\\.claude\\statusline-windows.ps1\"",
     "padding": 0
   },
   "enabledPlugins": {

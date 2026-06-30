@@ -495,7 +495,13 @@ if (Test-Path $claudeSourceDir) {
         }
     }
 
-    # statusline (use Windows-specific version)
+    # statusline (PowerShell version; native Windows runs statusLine via
+    # PowerShell, which cannot execute the bash .sh). Deploy the .sh too so
+    # Git Bash sessions still have it available.
+    $statuslinePs1 = Join-Path $claudeSourceDir "statusline-windows.ps1"
+    if (Test-Path $statuslinePs1) {
+        Backup-AndLink -Source $statuslinePs1 -Destination (Join-Path $claudeDir "statusline-windows.ps1")
+    }
     $statusline = Join-Path $claudeSourceDir "statusline-windows.sh"
     if (Test-Path $statusline) {
         Backup-AndLink -Source $statusline -Destination (Join-Path $claudeDir "statusline-windows.sh")
