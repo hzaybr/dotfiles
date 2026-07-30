@@ -1,12 +1,12 @@
 #!/bin/bash
 # Dotfiles installation script
-# Creates symbolic links from home directory to dotfiles
+# Links static dotfiles and copies AI client configuration into the home directory.
 
 set -e
 
 DOTFILES_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+AI_DIR="$DOTFILES_DIR/ai"
 BACKUP_DIR="$HOME/.dotfiles_backup/$(date +%Y%m%d_%H%M%S)"
-WORKSPACE_DIR="$HOME/git"
 
 # Colors
 RED='\033[0;31m'
@@ -40,46 +40,44 @@ backup_and_link() {
 backup_and_copy() {
 	local src="$1"
 	local dest="$2"
+	local relative_dest
+	local backup_dest
 
 	if [ -e "$dest" ] || [ -L "$dest" ]; then
-		mkdir -p "$BACKUP_DIR"
-		log_warn "Backing up existing $dest to $BACKUP_DIR/"
-		mv "$dest" "$BACKUP_DIR/"
+		relative_dest="${dest#"$HOME"/}"
+		backup_dest="$BACKUP_DIR/$relative_dest"
+		mkdir -p "$(dirname "$backup_dest")"
+		log_warn "Backing up existing $dest to $backup_dest"
+		mv "$dest" "$backup_dest"
 	fi
 
 	mkdir -p "$(dirname "$dest")"
-	cp "$src" "$dest"
+	if [ -d "$src" ]; then
+		cp -R "$src" "$dest"
+	else
+		cp "$src" "$dest"
+	fi
 	log_info "Copied $src -> $dest"
 }
 
-# Merge CLAUDE.md + rules/*.md into a single instructions file.
-# Usage: merge_instructions <dest>
-merge_instructions() {
-	local dest="$1"
-	local tmp
-	tmp=$(mktemp)
+install_skills() {
+	local source_dir="$1"
+	local destination_dir="$2"
+	local skill_dir
+	local skill_name
 
-	if [ -f "$DOTFILES_DIR/claude/CLAUDE.md" ]; then
-		cat "$DOTFILES_DIR/claude/CLAUDE.md" >>"$tmp"
-	fi
+	[ -d "$source_dir" ] || return 0
 
-	if [ -d "$DOTFILES_DIR/claude/rules" ]; then
-		for file in "$DOTFILES_DIR/claude/rules"/*.md; do
-			[ -f "$file" ] || continue
-			echo "" >>"$tmp"
-			echo "---" >>"$tmp"
-			echo "" >>"$tmp"
-			cat "$file" >>"$tmp"
-		done
-	fi
+	for skill_dir in "$source_dir"/*; do
+		[ -d "$skill_dir" ] || continue
+		if [ ! -f "$skill_dir/SKILL.md" ]; then
+			log_warn "Skipping skill without SKILL.md: $skill_dir"
+			continue
+		fi
 
-	if [ -e "$dest" ] || [ -L "$dest" ]; then
-		mkdir -p "$BACKUP_DIR"
-		mv "$dest" "$BACKUP_DIR/"
-	fi
-	mkdir -p "$(dirname "$dest")"
-	mv "$tmp" "$dest"
-	log_info "Generated $dest from CLAUDE.md + rules/*.md"
+		skill_name=$(basename "$skill_dir")
+		backup_and_copy "$skill_dir" "$destination_dir/$skill_name"
+	done
 }
 
 # Warn for unresolved MCP env placeholders like ${VAR} or $VAR.
@@ -274,20 +272,6 @@ sync_codex_mcp() {
 	log_info "Synced Codex MCP servers to $dest"
 }
 
-# Remove broken symlinks (and resulting empty subdirs) from managed directories.
-# Prevents drift when a source file under claude/ is deleted or renamed.
-cleanup_broken_symlinks() {
-	for dir in "$@"; do
-		[ -d "$dir" ] || continue
-		while IFS= read -r link; do
-			[ -n "$link" ] || continue
-			/bin/rm -f "$link"
-			log_info "Removed orphan symlink $link"
-		done < <(find "$dir" -type l ! -exec test -e {} \; -print 2>/dev/null)
-		find "$dir" -mindepth 1 -type d -empty -delete 2>/dev/null
-	done
-}
-
 echo "=========================================="
 echo "        Dotfiles Installation Script"
 echo "=========================================="
@@ -350,143 +334,41 @@ if [ -d "$DOTFILES_DIR/nvim" ]; then
 	backup_and_link "$DOTFILES_DIR/nvim" "$HOME/.config/nvim"
 fi
 
-# Claude Code
-CLAUDE_DIR="$HOME/.claude"
-if [ -d "$DOTFILES_DIR/claude" ]; then
-	# CLAUDE.md
-	if [ -f "$DOTFILES_DIR/claude/CLAUDE.md" ]; then
-		backup_and_link "$DOTFILES_DIR/claude/CLAUDE.md" "$CLAUDE_DIR/CLAUDE.md"
+# AI clients
+if [ -d "$AI_DIR" ]; then
+	CLAUDE_DIR="$HOME/.claude"
+	CODEX_DIR="$HOME/.codex"
+	COPILOT_DIR="$HOME/.copilot"
+	SHARED_SKILLS_DIR="$HOME/.agents/skills"
+	INSTRUCTIONS_SOURCE="$AI_DIR/instructions.md"
+	SKILLS_SOURCE="$AI_DIR/skills"
+	MCP_SOURCE="$AI_DIR/mcp-servers.json"
+
+	# Shared global instructions
+	if [ -f "$INSTRUCTIONS_SOURCE" ]; then
+		backup_and_copy "$INSTRUCTIONS_SOURCE" "$CLAUDE_DIR/CLAUDE.md"
+		backup_and_copy "$INSTRUCTIONS_SOURCE" "$CODEX_DIR/AGENTS.md"
+		backup_and_copy "$INSTRUCTIONS_SOURCE" "$COPILOT_DIR/copilot-instructions.md"
 	fi
 
-	# settings.json
-	if [ -f "$DOTFILES_DIR/claude/settings.json" ]; then
-		backup_and_link "$DOTFILES_DIR/claude/settings.json" "$CLAUDE_DIR/settings.json"
+	# Claude Code
+	if [ -f "$AI_DIR/claude/settings.json" ]; then
+		backup_and_copy "$AI_DIR/claude/settings.json" "$CLAUDE_DIR/settings.json"
+	fi
+	if [ -f "$AI_DIR/claude/statusline.sh" ]; then
+		backup_and_copy "$AI_DIR/claude/statusline.sh" "$CLAUDE_DIR/statusline.sh"
+	fi
+	install_skills "$SKILLS_SOURCE" "$CLAUDE_DIR/skills"
+
+	# Codex CLI
+	if [ -f "$AI_DIR/codex/config.toml" ]; then
+		backup_and_copy "$AI_DIR/codex/config.toml" "$CODEX_DIR/config.toml"
 	fi
 
-	# statusline.sh
-	if [ -f "$DOTFILES_DIR/claude/statusline.sh" ]; then
-		backup_and_link "$DOTFILES_DIR/claude/statusline.sh" "$CLAUDE_DIR/statusline.sh"
-	fi
+	# Codex and Copilot both discover personal skills under ~/.agents/skills.
+	install_skills "$SKILLS_SOURCE" "$SHARED_SKILLS_DIR"
 
-	# rules
-	if [ -d "$DOTFILES_DIR/claude/rules" ]; then
-		mkdir -p "$CLAUDE_DIR/rules"
-		for file in "$DOTFILES_DIR/claude/rules"/*.md; do
-			[ -f "$file" ] && backup_and_link "$file" "$CLAUDE_DIR/rules/$(basename "$file")"
-		done
-	fi
-
-	# commands
-	if [ -d "$DOTFILES_DIR/claude/commands" ]; then
-		mkdir -p "$CLAUDE_DIR/commands"
-		for file in "$DOTFILES_DIR/claude/commands"/*.md; do
-			[ -f "$file" ] && backup_and_link "$file" "$CLAUDE_DIR/commands/$(basename "$file")"
-		done
-	fi
-
-	# skills
-	if [ -d "$DOTFILES_DIR/claude/skills" ]; then
-		for skill_dir in "$DOTFILES_DIR/claude/skills"/*/; do
-			skill_name=$(basename "$skill_dir")
-			mkdir -p "$CLAUDE_DIR/skills/$skill_name"
-			if [ -f "${skill_dir}SKILL.md" ]; then
-				backup_and_link "${skill_dir}SKILL.md" "$CLAUDE_DIR/skills/$skill_name/SKILL.md"
-			fi
-		done
-	fi
-
-	# agents
-	if [ -d "$DOTFILES_DIR/claude/agents" ]; then
-		mkdir -p "$CLAUDE_DIR/agents"
-		for file in "$DOTFILES_DIR/claude/agents"/*.md; do
-			[ -f "$file" ] && backup_and_link "$file" "$CLAUDE_DIR/agents/$(basename "$file")"
-		done
-	fi
-fi
-
-# Copilot CLI (symlinks to Claude source of truth)
-COPILOT_DIR="$HOME/.copilot"
-if [ -d "$DOTFILES_DIR/claude" ]; then
-	mkdir -p "$COPILOT_DIR/rules" "$COPILOT_DIR/skills"
-
-	# Core instructions
-	if [ -f "$DOTFILES_DIR/claude/CLAUDE.md" ]; then
-		backup_and_link "$DOTFILES_DIR/claude/CLAUDE.md" "$COPILOT_DIR/copilot-instructions.md"
-	fi
-
-	# Rules (.md -> .instructions.md)
-	if [ -d "$DOTFILES_DIR/claude/rules" ]; then
-		for file in "$DOTFILES_DIR/claude/rules"/*.md; do
-			[ -f "$file" ] || continue
-			name="$(basename "$file" .md)"
-			backup_and_link "$file" "$COPILOT_DIR/rules/$name.instructions.md"
-		done
-	fi
-
-	# Skills (SKILL.md -> skill-name.instructions.md)
-	if [ -d "$DOTFILES_DIR/claude/skills" ]; then
-		for skill_dir in "$DOTFILES_DIR/claude/skills"/*/; do
-			skill_name=$(basename "$skill_dir")
-			if [ -f "${skill_dir}SKILL.md" ]; then
-				backup_and_link "${skill_dir}SKILL.md" "$COPILOT_DIR/skills/$skill_name.instructions.md"
-			fi
-		done
-	fi
-
-	# Agents (merge multiple files into single AGENTS.md)
-	if [ -d "$DOTFILES_DIR/claude/agents" ]; then
-		agents_tmp=$(mktemp)
-		first=true
-		for file in "$DOTFILES_DIR/claude/agents"/*.md; do
-			[ -f "$file" ] || continue
-			if [ "$first" = true ]; then
-				first=false
-			else
-				echo "" >>"$agents_tmp"
-				echo "---" >>"$agents_tmp"
-				echo "" >>"$agents_tmp"
-			fi
-			cat "$file" >>"$agents_tmp"
-		done
-		if [ -e "$COPILOT_DIR/AGENTS.md" ] || [ -L "$COPILOT_DIR/AGENTS.md" ]; then
-			mkdir -p "$BACKUP_DIR"
-			mv "$COPILOT_DIR/AGENTS.md" "$BACKUP_DIR/"
-		fi
-		mv "$agents_tmp" "$COPILOT_DIR/AGENTS.md"
-		log_info "Generated $COPILOT_DIR/AGENTS.md from agents/*.md"
-	fi
-fi
-
-# Codex CLI
-CODEX_DIR="$HOME/.codex"
-CODEX_SOURCE_DIR="$DOTFILES_DIR/codex"
-CODEX_SKILLS_DIR="$HOME/.codex/skills"
-MCP_SOURCE="$DOTFILES_DIR/claude/mcp-servers.json"
-if [ -d "$DOTFILES_DIR/claude" ] || [ -d "$CODEX_SOURCE_DIR" ]; then
-	mkdir -p "$CODEX_DIR" "$CODEX_SKILLS_DIR"
-
-	# AGENTS.md
-	if [ -f "$CODEX_SOURCE_DIR/AGENTS.md" ]; then
-		backup_and_link "$CODEX_SOURCE_DIR/AGENTS.md" "$CODEX_DIR/AGENTS.md"
-	elif [ -d "$DOTFILES_DIR/claude" ]; then
-		# Backward-compatible fallback for older checkouts without codex/AGENTS.md.
-		merge_instructions "$CODEX_DIR/AGENTS.md"
-	fi
-
-	# Base config is copied instead of symlinked so MCP env resolution never mutates the repo.
-	if [ -f "$CODEX_SOURCE_DIR/config.toml" ]; then
-		backup_and_copy "$CODEX_SOURCE_DIR/config.toml" "$CODEX_DIR/config.toml"
-	fi
-
-	# Skills (~/.codex/skills/<name>/ -> claude/skills/<name>/)
-	if [ -d "$DOTFILES_DIR/claude/skills" ]; then
-		for skill_dir in "$DOTFILES_DIR/claude/skills"/*/; do
-			skill_name=$(basename "$skill_dir")
-			backup_and_link "${skill_dir%/}" "$CODEX_SKILLS_DIR/$skill_name"
-		done
-	fi
-
-	# MCP servers (repo source -> Claude + Codex)
+	# MCP servers are synced to Claude and Codex from one source of truth.
 	if [ -f "$MCP_SOURCE" ]; then
 		if command -v jq >/dev/null 2>&1; then
 			warn_missing_mcp_env_vars "$MCP_SOURCE"
@@ -495,28 +377,6 @@ if [ -d "$DOTFILES_DIR/claude" ] || [ -d "$CODEX_SOURCE_DIR" ]; then
 		sync_codex_mcp "$MCP_SOURCE" "$CODEX_DIR/config.toml"
 	fi
 fi
-
-# Workspace config (~/git/)
-if [ -d "$DOTFILES_DIR/claude-workspace" ] && [ -d "$WORKSPACE_DIR" ]; then
-	# Claude workspace CLAUDE.md
-	if [ -f "$DOTFILES_DIR/claude-workspace/CLAUDE.md" ]; then
-		backup_and_link "$DOTFILES_DIR/claude-workspace/CLAUDE.md" "$WORKSPACE_DIR/CLAUDE.md"
-	fi
-
-	# Copilot workspace instructions (symlink to same CLAUDE.md)
-	mkdir -p "$WORKSPACE_DIR/.copilot"
-	backup_and_link "$DOTFILES_DIR/claude-workspace/CLAUDE.md" "$WORKSPACE_DIR/.copilot/copilot-instructions.md"
-fi
-
-cleanup_broken_symlinks \
-	"$HOME/.claude/commands" \
-	"$HOME/.claude/agents" \
-	"$HOME/.claude/rules" \
-	"$HOME/.claude/skills" \
-	"$HOME/.codex/skills" \
-	"$HOME/.agents/skills" \
-	"$HOME/.copilot/skills" \
-	"$HOME/.copilot/rules"
 
 echo ""
 echo "=========================================="

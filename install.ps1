@@ -13,6 +13,7 @@ param(
 $ErrorActionPreference = "Stop"
 
 $DotfilesDir = $PSScriptRoot
+$AiDir = Join-Path $DotfilesDir "ai"
 $BackupDir = Join-Path $env:USERPROFILE ".dotfiles_backup\$(Get-Date -Format 'yyyyMMdd_HHmmss')"
 $BackupCreated = $false
 
@@ -66,14 +67,30 @@ function Remove-Symlink {
 }
 
 function Backup-Existing {
-    param([string]$Destination)
+    param(
+        [string]$Destination,
+        [switch]$PreservePath
+    )
     if (-not $script:BackupCreated) {
         New-Item -ItemType Directory -Path $BackupDir -Force | Out-Null
         $script:BackupCreated = $true
     }
-    Write-Warn "Backing up existing $Destination to $BackupDir\"
-    $backupName = Split-Path $Destination -Leaf
-    Move-Item -LiteralPath $Destination -Destination (Join-Path $BackupDir $backupName) -Force
+
+    if ($PreservePath) {
+        $homePattern = '^' + [regex]::Escape($env:USERPROFILE) + '[\\/]*'
+        $relativePath = $Destination -replace $homePattern, ''
+        $backupPath = Join-Path $BackupDir $relativePath
+        $backupParent = Split-Path $backupPath -Parent
+        if (-not (Test-Path $backupParent)) {
+            New-Item -ItemType Directory -Path $backupParent -Force | Out-Null
+        }
+    } else {
+        $backupName = Split-Path $Destination -Leaf
+        $backupPath = Join-Path $BackupDir $backupName
+    }
+
+    Write-Warn "Backing up existing $Destination to $backupPath"
+    Move-Item -LiteralPath $Destination -Destination $backupPath -Force
 }
 
 function Backup-AndLink {
@@ -118,14 +135,15 @@ function Backup-AndLink {
 function Backup-AndCopy {
     param(
         [string]$Source,
-        [string]$Destination
+        [string]$Destination,
+        [switch]$IsDirectory
     )
 
     if (Test-PathOrLink $Destination) {
         if (Test-IsSymlink $Destination) {
             Remove-Symlink $Destination
         } else {
-            Backup-Existing $Destination
+            Backup-Existing -Destination $Destination -PreservePath
         }
     }
 
@@ -134,8 +152,35 @@ function Backup-AndCopy {
         New-Item -ItemType Directory -Path $parentDir -Force | Out-Null
     }
 
-    Copy-Item -LiteralPath $Source -Destination $Destination -Force
+    if ($IsDirectory) {
+        Copy-Item -LiteralPath $Source -Destination $Destination -Recurse -Force
+    } else {
+        Copy-Item -LiteralPath $Source -Destination $Destination -Force
+    }
     Write-Info "Copied $Source -> $Destination"
+}
+
+function Install-Skills {
+    param(
+        [string]$SourceDir,
+        [string]$DestinationDir
+    )
+
+    if (-not (Test-Path -LiteralPath $SourceDir)) {
+        return
+    }
+
+    Get-ChildItem -LiteralPath $SourceDir -Directory | ForEach-Object {
+        $skillMd = Join-Path $_.FullName "SKILL.md"
+        if (-not (Test-Path -LiteralPath $skillMd)) {
+            Write-Warn "Skipping skill without SKILL.md: $($_.FullName)"
+        } else {
+            Backup-AndCopy `
+                -Source $_.FullName `
+                -Destination (Join-Path $DestinationDir $_.Name) `
+                -IsDirectory
+        }
+    }
 }
 
 # UTF-8 (no BOM) writers; PS 5.1 Set-Content -Encoding utf8 emits a BOM
@@ -188,7 +233,7 @@ function Get-McpServers {
     return $json
 }
 
-# Resolve mcp-servers.json into concrete {command,args,env} per server for a
+# Resolve mcp-servers.json into concrete command or HTTP server entries for a
 # given target. <target>Args (e.g. codexArgs) fully overrides the base args.
 function Resolve-McpSource {
     param([string]$SourcePath, [string]$Target)
@@ -198,27 +243,31 @@ function Resolve-McpSource {
 
     foreach ($prop in $servers.PSObject.Properties) {
         $srv = $prop.Value
+        $propertyNames = $srv.PSObject.Properties.Name
 
         # Remote (http/sse) servers have no command; preserve their fields as-is.
-        if (-not (($srv.PSObject.Properties.Name -contains 'command') -and $null -ne $srv.command)) {
+        if (-not (($propertyNames -contains 'command') -and $null -ne $srv.command)) {
             $entry = [ordered]@{}
             foreach ($p in $srv.PSObject.Properties) {
                 if ($p.Name -eq $overrideKey) { continue }
                 $entry[$p.Name] = $p.Value
+            }
+            if (($propertyNames -contains 'url') -and -not ($propertyNames -contains 'type')) {
+                $entry.type = 'http'
             }
             $result[$prop.Name] = $entry
             continue
         }
 
         $serverArgs = @()
-        if (($srv.PSObject.Properties.Name -contains $overrideKey) -and $null -ne $srv.$overrideKey) {
+        if (($propertyNames -contains $overrideKey) -and $null -ne $srv.$overrideKey) {
             $serverArgs = @($srv.$overrideKey)
-        } elseif (($srv.PSObject.Properties.Name -contains 'args') -and $null -ne $srv.args) {
+        } elseif (($propertyNames -contains 'args') -and $null -ne $srv.args) {
             $serverArgs = @($srv.args)
         }
 
         $env = [ordered]@{}
-        if (($srv.PSObject.Properties.Name -contains 'env') -and $srv.env) {
+        if (($propertyNames -contains 'env') -and $srv.env) {
             foreach ($e in $srv.env.PSObject.Properties) {
                 $r = Resolve-McpValue $e.Value
                 if ($r.Keep) { $env[$e.Name] = $r.Value }
@@ -319,17 +368,23 @@ function Sync-CodexMcp {
     $blockLines = [System.Collections.Generic.List[string]]::new()
     foreach ($name in $resolved.Keys) {
         $srv = $resolved[$name]
-        if ([string]::IsNullOrEmpty($srv.command)) { continue }
-        $blockLines.Add("[mcp_servers.$(ConvertTo-JsonString $name)]")
-        $blockLines.Add("command = $(ConvertTo-JsonString $srv.command)")
-        if (@($srv.args).Count -gt 0) {
-            $blockLines.Add("args = $(ConvertTo-JsonArray @($srv.args))")
+        if ([string]::IsNullOrEmpty($srv.command) -and [string]::IsNullOrEmpty($srv.url)) {
+            continue
         }
-        if ($srv.env.Count -gt 0) {
-            $pairs = foreach ($k in $srv.env.Keys) {
-                "$(ConvertTo-JsonString $k) = $(ConvertTo-JsonString $srv.env[$k])"
+        $blockLines.Add("[mcp_servers.$(ConvertTo-JsonString $name)]")
+        if (-not [string]::IsNullOrEmpty($srv.url)) {
+            $blockLines.Add("url = $(ConvertTo-JsonString $srv.url)")
+        } else {
+            $blockLines.Add("command = $(ConvertTo-JsonString $srv.command)")
+            if (@($srv.args).Count -gt 0) {
+                $blockLines.Add("args = $(ConvertTo-JsonArray @($srv.args))")
             }
-            $blockLines.Add("env = { $($pairs -join ', ') }")
+            if ($srv.env.Count -gt 0) {
+                $pairs = foreach ($k in $srv.env.Keys) {
+                    "$(ConvertTo-JsonString $k) = $(ConvertTo-JsonString $srv.env[$k])"
+                }
+                $blockLines.Add("env = { $($pairs -join ', ') }")
+            }
         }
         $blockLines.Add("")
     }
@@ -351,29 +406,6 @@ function Sync-CodexMcp {
     Write-Info "Synced Codex MCP servers to $DestPath"
 }
 
-# Remove dest entries whose source counterpart no longer exists.
-# Works for both copy and symlink modes (a stale symlink's target won't exist
-# either, so the source-side check catches both kinds of drift).
-function Remove-OrphanedItems {
-    param(
-        [string]$DestDir,
-        [scriptblock]$SourcePathFromName
-    )
-    if (-not (Test-Path -LiteralPath $DestDir)) { return }
-    Get-ChildItem -LiteralPath $DestDir -Force -ErrorAction SilentlyContinue | ForEach-Object {
-        $srcPath = & $SourcePathFromName $_.Name
-        if (-not $srcPath) { return }
-        if (-not (Test-Path -LiteralPath $srcPath)) {
-            if (Test-IsSymlink $_.FullName) {
-                Remove-Symlink $_.FullName
-            } else {
-                Remove-Item -LiteralPath $_.FullName -Recurse -Force
-            }
-            Write-Info "Removed orphan $($_.FullName)"
-        }
-    }
-}
-
 # Header
 Write-Host ""
 Write-Host "==========================================" -ForegroundColor Cyan
@@ -382,8 +414,8 @@ Write-Host "              (Windows)" -ForegroundColor Cyan
 Write-Host "==========================================" -ForegroundColor Cyan
 Write-Host ""
 
-# Default mode is copy + remove (parity with install.sh on machines without
-# stable symlinks). Opt in to symlinks with -Symlink.
+# Default mode is copy + remove. Opt in to symlinks for non-AI dotfiles with
+# -Symlink; AI client configuration is always copied because tools may mutate it.
 $script:UseCopy = -not $Symlink
 if ($Symlink) {
     if (-not (Test-SymlinkSupport)) {
@@ -449,266 +481,78 @@ if (Test-Path $psProfile) {
     Backup-AndLink -Source $psProfile -Destination $PROFILE
 }
 
-# Claude Code
-$claudeSourceDir = Join-Path $DotfilesDir "claude"
-if (Test-Path $claudeSourceDir) {
+# AI clients
+if (Test-Path -LiteralPath $AiDir) {
     $claudeDir = Join-Path $env:USERPROFILE ".claude"
+    $codexDir = Join-Path $env:USERPROFILE ".codex"
+    $copilotDir = Join-Path $env:USERPROFILE ".copilot"
+    $sharedSkillsDir = Join-Path $env:USERPROFILE ".agents\skills"
+    $instructionsSource = Join-Path $AiDir "instructions.md"
+    $skillsSource = Join-Path $AiDir "skills"
+    $mcpSource = Join-Path $AiDir "mcp-servers.json"
 
-    # Ensure .claude directory exists
-    if (-not (Test-Path $claudeDir)) {
-        New-Item -ItemType Directory -Path $claudeDir -Force | Out-Null
+    # Shared global instructions
+    if (Test-Path -LiteralPath $instructionsSource) {
+        Backup-AndCopy `
+            -Source $instructionsSource `
+            -Destination (Join-Path $claudeDir "CLAUDE.md")
+        Backup-AndCopy `
+            -Source $instructionsSource `
+            -Destination (Join-Path $codexDir "AGENTS.md")
+        Backup-AndCopy `
+            -Source $instructionsSource `
+            -Destination (Join-Path $copilotDir "copilot-instructions.md")
     }
 
-    # CLAUDE.md
-    $claudeMd = Join-Path $claudeSourceDir "CLAUDE.md"
-    if (Test-Path $claudeMd) {
-        Backup-AndLink -Source $claudeMd -Destination (Join-Path $claudeDir "CLAUDE.md")
+    # Claude Code
+    $claudeSettings = Join-Path $AiDir "claude\settings.windows.json"
+    if (Test-Path -LiteralPath $claudeSettings) {
+        Backup-AndCopy `
+            -Source $claudeSettings `
+            -Destination (Join-Path $claudeDir "settings.json")
     }
 
-    # settings.json (use Windows-specific version)
-    $claudeSettings = Join-Path $claudeSourceDir "settings.windows.json"
-    if (Test-Path $claudeSettings) {
-        Backup-AndLink -Source $claudeSettings -Destination (Join-Path $claudeDir "settings.json")
+    $statuslinePs1 = Join-Path $AiDir "claude\statusline-windows.ps1"
+    if (Test-Path -LiteralPath $statuslinePs1) {
+        Backup-AndCopy `
+            -Source $statuslinePs1 `
+            -Destination (Join-Path $claudeDir "statusline-windows.ps1")
     }
 
-    # rules
-    $rulesDir = Join-Path $claudeSourceDir "rules"
-    if (Test-Path $rulesDir) {
-        $destRulesDir = Join-Path $claudeDir "rules"
-        if (-not (Test-Path $destRulesDir)) {
-            New-Item -ItemType Directory -Path $destRulesDir -Force | Out-Null
-        }
-        Get-ChildItem -Path $rulesDir -Filter "*.md" | ForEach-Object {
-            Backup-AndLink -Source $_.FullName -Destination (Join-Path $destRulesDir $_.Name)
-        }
+    $statusline = Join-Path $AiDir "claude\statusline-windows.sh"
+    if (Test-Path -LiteralPath $statusline) {
+        Backup-AndCopy `
+            -Source $statusline `
+            -Destination (Join-Path $claudeDir "statusline-windows.sh")
     }
 
-    # commands
-    $commandsDir = Join-Path $claudeSourceDir "commands"
-    if (Test-Path $commandsDir) {
-        $destCommandsDir = Join-Path $claudeDir "commands"
-        if (-not (Test-Path $destCommandsDir)) {
-            New-Item -ItemType Directory -Path $destCommandsDir -Force | Out-Null
-        }
-        Get-ChildItem -Path $commandsDir -Filter "*.md" | ForEach-Object {
-            Backup-AndLink -Source $_.FullName -Destination (Join-Path $destCommandsDir $_.Name)
-        }
+    Install-Skills `
+        -SourceDir $skillsSource `
+        -DestinationDir (Join-Path $claudeDir "skills")
+
+    # Codex CLI
+    $codexConfig = Join-Path $AiDir "codex\config.toml"
+    if (Test-Path -LiteralPath $codexConfig) {
+        Backup-AndCopy `
+            -Source $codexConfig `
+            -Destination (Join-Path $codexDir "config.toml")
     }
 
-    # statusline (PowerShell version; native Windows runs statusLine via
-    # PowerShell, which cannot execute the bash .sh). Deploy the .sh too so
-    # Git Bash sessions still have it available.
-    $statuslinePs1 = Join-Path $claudeSourceDir "statusline-windows.ps1"
-    if (Test-Path $statuslinePs1) {
-        Backup-AndLink -Source $statuslinePs1 -Destination (Join-Path $claudeDir "statusline-windows.ps1")
-    }
-    $statusline = Join-Path $claudeSourceDir "statusline-windows.sh"
-    if (Test-Path $statusline) {
-        Backup-AndLink -Source $statusline -Destination (Join-Path $claudeDir "statusline-windows.sh")
-    }
+    # Codex and Copilot both discover personal skills under ~/.agents/skills.
+    Install-Skills `
+        -SourceDir $skillsSource `
+        -DestinationDir $sharedSkillsDir
 
-    # agents
-    $agentsDir = Join-Path $claudeSourceDir "agents"
-    if (Test-Path $agentsDir) {
-        $destAgentsDir = Join-Path $claudeDir "agents"
-        if (-not (Test-Path $destAgentsDir)) {
-            New-Item -ItemType Directory -Path $destAgentsDir -Force | Out-Null
-        }
-        Get-ChildItem -Path $agentsDir -Filter "*.md" | ForEach-Object {
-            Backup-AndLink -Source $_.FullName -Destination (Join-Path $destAgentsDir $_.Name)
-        }
-    }
-
-    # skills
-    $skillsDir = Join-Path $claudeSourceDir "skills"
-    if (Test-Path $skillsDir) {
-        $destSkillsDir = Join-Path $claudeDir "skills"
-        Get-ChildItem -Path $skillsDir -Directory | ForEach-Object {
-            $skillName = $_.Name
-            $skillDestDir = Join-Path $destSkillsDir $skillName
-            if (-not (Test-Path $skillDestDir)) {
-                New-Item -ItemType Directory -Path $skillDestDir -Force | Out-Null
-            }
-            $skillMd = Join-Path $_.FullName "SKILL.md"
-            if (Test-Path $skillMd) {
-                Backup-AndLink -Source $skillMd -Destination (Join-Path $skillDestDir "SKILL.md")
-            }
-        }
-    }
-}
-
-# Copilot CLI (reuses Claude source of truth)
-$copilotDir = Join-Path $env:USERPROFILE ".copilot"
-if (Test-Path $claudeSourceDir) {
-    if (-not (Test-Path $copilotDir)) {
-        New-Item -ItemType Directory -Path $copilotDir -Force | Out-Null
-    }
-
-    # Core instructions (CLAUDE.md -> copilot-instructions.md)
-    $claudeMd = Join-Path $claudeSourceDir "CLAUDE.md"
-    if (Test-Path $claudeMd) {
-        Backup-AndLink -Source $claudeMd -Destination (Join-Path $copilotDir "copilot-instructions.md")
-    }
-
-    # Rules (.md -> .instructions.md)
-    $rulesDir = Join-Path $claudeSourceDir "rules"
-    if (Test-Path $rulesDir) {
-        $destRulesDir = Join-Path $copilotDir "rules"
-        if (-not (Test-Path $destRulesDir)) {
-            New-Item -ItemType Directory -Path $destRulesDir -Force | Out-Null
-        }
-        Get-ChildItem -Path $rulesDir -Filter "*.md" | ForEach-Object {
-            $name = $_.BaseName
-            Backup-AndLink -Source $_.FullName -Destination (Join-Path $destRulesDir "$name.instructions.md")
-        }
-    }
-
-    # Skills (SKILL.md -> skill-name.instructions.md)
-    $skillsDir = Join-Path $claudeSourceDir "skills"
-    if (Test-Path $skillsDir) {
-        $destSkillsDir = Join-Path $copilotDir "skills"
-        if (-not (Test-Path $destSkillsDir)) {
-            New-Item -ItemType Directory -Path $destSkillsDir -Force | Out-Null
-        }
-        Get-ChildItem -Path $skillsDir -Directory | ForEach-Object {
-            $skillName = $_.Name
-            $skillMd = Join-Path $_.FullName "SKILL.md"
-            if (Test-Path $skillMd) {
-                Backup-AndLink -Source $skillMd -Destination (Join-Path $destSkillsDir "$skillName.instructions.md")
-            }
-        }
-    }
-
-    # Agents (merge multiple .md into single AGENTS.md)
-    $agentsDir = Join-Path $claudeSourceDir "agents"
-    if (Test-Path $agentsDir) {
-        $agentFiles = Get-ChildItem -Path $agentsDir -Filter "*.md" | Sort-Object Name
-        if ($agentFiles.Count -gt 0) {
-            $agentsDest = Join-Path $copilotDir "AGENTS.md"
-            if (Test-Path $agentsDest) {
-                if (-not $script:BackupCreated) {
-                    New-Item -ItemType Directory -Path $BackupDir -Force | Out-Null
-                    $script:BackupCreated = $true
-                }
-                Move-Item -Path $agentsDest -Destination (Join-Path $BackupDir "AGENTS.md") -Force
-            }
-            $content = ($agentFiles | ForEach-Object { Get-Content $_.FullName -Raw }) -join "`n`n---`n`n"
-            Set-Content -Path $agentsDest -Value $content -NoNewline
-            Write-Info "Generated $agentsDest from agents/*.md"
-        }
-    }
-}
-
-# Codex CLI (reuses Claude source of truth)
-$codexSourceDir = Join-Path $DotfilesDir "codex"
-$codexDir = Join-Path $env:USERPROFILE ".codex"
-# Codex discovers skills in $CODEX_HOME/skills (default ~/.codex/skills),
-# not ~/.agents/skills. Keep in sync with install.sh.
-$codexSkillsDir = Join-Path $codexDir "skills"
-$mcpSource = Join-Path $claudeSourceDir "mcp-servers.json"
-if ((Test-Path $claudeSourceDir) -or (Test-Path $codexSourceDir)) {
-    foreach ($d in @($codexDir, $codexSkillsDir)) {
-        if (-not (Test-Path $d)) {
-            New-Item -ItemType Directory -Path $d -Force | Out-Null
-        }
-    }
-
-    # AGENTS.md (link codex/AGENTS.md, or merge CLAUDE.md + rules for old checkouts)
-    $codexAgents = Join-Path $codexSourceDir "AGENTS.md"
-    if (Test-Path $codexAgents) {
-        Backup-AndLink -Source $codexAgents -Destination (Join-Path $codexDir "AGENTS.md")
-    } else {
-        $claudeMd = Join-Path $claudeSourceDir "CLAUDE.md"
-        if (Test-Path $claudeMd) {
-            $parts = @((Get-Content -LiteralPath $claudeMd -Raw))
-            $claudeRulesDir = Join-Path $claudeSourceDir "rules"
-            if (Test-Path $claudeRulesDir) {
-                Get-ChildItem -Path $claudeRulesDir -Filter "*.md" | Sort-Object Name | ForEach-Object {
-                    $parts += "`n---`n"
-                    $parts += (Get-Content -LiteralPath $_.FullName -Raw)
-                }
-            }
-            $agentsDest = Join-Path $codexDir "AGENTS.md"
-            if (Test-PathOrLink $agentsDest) {
-                if (Test-IsSymlink $agentsDest) { Remove-Symlink $agentsDest } else { Backup-Existing $agentsDest }
-            }
-            Write-Utf8Text -Path $agentsDest -Text ($parts -join "`n")
-            Write-Info "Generated $agentsDest from CLAUDE.md + rules/*.md"
-        }
-    }
-
-    # Base config is copied (never symlinked) so MCP edits never touch the repo.
-    $codexConfig = Join-Path $codexSourceDir "config.toml"
-    if (Test-Path $codexConfig) {
-        Backup-AndCopy -Source $codexConfig -Destination (Join-Path $codexDir "config.toml")
-    }
-
-    # Skills (~/.codex/skills/<name> -> claude/skills/<name>)
-    $codexSkillsSrc = Join-Path $claudeSourceDir "skills"
-    if (Test-Path $codexSkillsSrc) {
-        Get-ChildItem -Path $codexSkillsSrc -Directory | ForEach-Object {
-            Backup-AndLink -Source $_.FullName -Destination (Join-Path $codexSkillsDir $_.Name) -IsDirectory
-        }
-    }
-
-    # MCP servers (repo source -> Claude + Codex)
-    if (Test-Path $mcpSource) {
+    # MCP servers are synced to Claude and Codex from one source of truth.
+    if (Test-Path -LiteralPath $mcpSource) {
         Write-MissingMcpEnvWarnings -SourcePath $mcpSource
-        Sync-ClaudeMcp -SourcePath $mcpSource -DestPath (Join-Path $env:USERPROFILE ".claude.json")
-        Sync-CodexMcp -SourcePath $mcpSource -DestPath (Join-Path $codexDir "config.toml")
+        Sync-ClaudeMcp `
+            -SourcePath $mcpSource `
+            -DestPath (Join-Path $env:USERPROFILE ".claude.json")
+        Sync-CodexMcp `
+            -SourcePath $mcpSource `
+            -DestPath (Join-Path $codexDir "config.toml")
     }
-}
-
-# Workspace config (~/git/)
-$workspaceDir = Join-Path $env:USERPROFILE "git"
-$claudeWorkspaceDir = Join-Path $DotfilesDir "claude-workspace"
-if ((Test-Path $claudeWorkspaceDir) -and (Test-Path $workspaceDir)) {
-    # Claude workspace CLAUDE.md
-    $wsClaude = Join-Path $claudeWorkspaceDir "CLAUDE.md"
-    if (Test-Path $wsClaude) {
-        Backup-AndLink -Source $wsClaude -Destination (Join-Path $workspaceDir "CLAUDE.md")
-    }
-
-    # Copilot workspace instructions
-    $wsCopilotDir = Join-Path $workspaceDir ".copilot"
-    if (-not (Test-Path $wsCopilotDir)) {
-        New-Item -ItemType Directory -Path $wsCopilotDir -Force | Out-Null
-    }
-    Backup-AndLink -Source $wsClaude -Destination (Join-Path $wsCopilotDir "copilot-instructions.md")
-}
-
-# Drop dest entries left behind when their source was deleted or renamed.
-# Each mapping converts a dest file/dir name back to its expected source path;
-# anything whose source is gone gets removed.
-$cleanupClaudeDir = Join-Path $env:USERPROFILE ".claude"
-$cleanupCopilotDir = Join-Path $env:USERPROFILE ".copilot"
-$cleanupCodexSkillsDir = Join-Path $env:USERPROFILE ".codex\skills"
-$cleanupClaudeSrc = Join-Path $DotfilesDir "claude"
-
-Remove-OrphanedItems -DestDir (Join-Path $cleanupClaudeDir "commands") -SourcePathFromName {
-    param($name) Join-Path $cleanupClaudeSrc "commands\$name"
-}
-Remove-OrphanedItems -DestDir (Join-Path $cleanupClaudeDir "agents") -SourcePathFromName {
-    param($name) Join-Path $cleanupClaudeSrc "agents\$name"
-}
-Remove-OrphanedItems -DestDir (Join-Path $cleanupClaudeDir "rules") -SourcePathFromName {
-    param($name) Join-Path $cleanupClaudeSrc "rules\$name"
-}
-Remove-OrphanedItems -DestDir (Join-Path $cleanupClaudeDir "skills") -SourcePathFromName {
-    param($name) Join-Path $cleanupClaudeSrc "skills\$name"
-}
-Remove-OrphanedItems -DestDir (Join-Path $cleanupCopilotDir "rules") -SourcePathFromName {
-    param($name)
-    $base = $name -replace '\.instructions\.md$', '.md'
-    Join-Path $cleanupClaudeSrc "rules\$base"
-}
-Remove-OrphanedItems -DestDir (Join-Path $cleanupCopilotDir "skills") -SourcePathFromName {
-    param($name)
-    $base = $name -replace '\.instructions\.md$', ''
-    Join-Path $cleanupClaudeSrc "skills\$base"
-}
-Remove-OrphanedItems -DestDir $cleanupCodexSkillsDir -SourcePathFromName {
-    param($name) Join-Path $cleanupClaudeSrc "skills\$name"
 }
 
 # Footer

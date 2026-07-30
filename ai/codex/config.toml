@@ -1,0 +1,16 @@
+personality = "pragmatic"
+
+[tui]
+alternate_screen = "never"
+show_tooltips = false
+notifications = true
+notification_condition = "unfocused"
+status_line = [
+  "model-with-reasoning",
+  "current-dir",
+  "git-branch",
+  "pull-request-number",
+  "branch-changes",
+  "context-remaining",
+]
+status_line_use_colors = true

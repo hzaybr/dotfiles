@@ -1,150 +1,95 @@
 # Dotfiles
 
-Personal configuration files for zsh, tmux, git, ghostty, neovim, Claude Code, Codex CLI, and GitHub Copilot CLI.
+Personal configuration for shell, terminal, editors, Git, and AI coding
+clients.
 
-## Contents
+## Structure
 
-```
+```text
 dotfiles/
-├── zsh/
-│   └── .zshrc              # Zsh configuration (Zim framework + Powerlevel10k)
-├── tmux/
-│   └── .tmux.conf          # Tmux configuration (screen-like + vim bindings)
-├── git/
-│   └── ignore              # Global gitignore
+├── ai/                  # Claude Code, Codex, and Copilot CLI baselines
+│   ├── claude/          # Claude settings and status lines
+│   ├── codex/           # Codex configuration
+│   ├── skills/          # Shared personal skills
+│   ├── instructions.md  # Shared global instructions
+│   └── mcp-servers.json # Shared MCP source of truth
 ├── ghostty/
-│   └── config              # Ghostty terminal configuration
-├── nvim/                   # Neovim configuration (NvChad-based)
-├── claude/
-│   ├── CLAUDE.md           # Global Claude Code instructions
-│   ├── settings.json       # Plugins and UI settings
-│   ├── mcp-servers.json    # MCP server source of truth (no secrets)
-│   ├── statusline.sh       # Status line script
-│   ├── rules/              # Coding style and security rules
-│   ├── commands/           # Custom commands (tdd, plan, etc.)
-│   ├── agents/             # Agent definitions
-│   └── skills/             # Skill definitions
-├── codex/
-│   ├── AGENTS.md           # Global Codex instructions
-│   ├── config.toml         # Base Codex CLI configuration
-│   └── README.md           # Codex setup notes
-├── copilot/
-│   └── README.md           # Copilot CLI notes
-├── claude-workspace/
-│   └── CLAUDE.md           # Shared instructions for all ~/git/ projects
-├── install.sh              # Installation script
-└── README.md
+├── git/
+├── hammerspoon/
+├── nvim/
+├── tmux/
+├── vim/
+├── zsh/
+├── install.sh           # macOS and Linux installer
+└── install.ps1          # Windows installer
 ```
 
-## Prerequisites
-
-Before running `install.sh`:
-
-1. **Create the workspace directory** — the script expects the repo at `~/git/dotfiles`
-
-   ```bash
-   mkdir -p ~/git
-   ```
-
-2. **Install dependencies** — the script only creates symlinks; it does not install any tools. Install the ones you need from the list below before or after running the script.
+See [`ai/README.md`](ai/README.md) for the AI-specific structure and
+dependencies.
 
 ## Installation
 
+Clone the repository anywhere, then run the installer from its root.
+
+### macOS and Linux
+
 ```bash
-git clone <your-repo-url> ~/git/dotfiles
-cd ~/git/dotfiles
-chmod +x install.sh
 ./install.sh
 ```
 
-The script will:
+Static shell, terminal, Git, and editor configuration is installed with
+symbolic links.
 
-1. Backup existing config files to `~/.dotfiles_backup/<timestamp>/`
-2. Create symbolic links to the dotfiles
-3. Generate GitHub Copilot CLI config from Claude Code settings (see below)
-4. Install repo-managed Codex instructions and base config from `codex/`
-5. Sync MCP servers from `claude/mcp-servers.json` to both Claude and Codex
+### Windows
 
-The script is safe to re-run — it backs up any existing files before overwriting.
-
-## Claude Code → Copilot CLI
-
-`install.sh` uses Claude Code as the single source of truth, and automatically generates corresponding Copilot CLI config under `~/.copilot/`:
-
-- `claude/CLAUDE.md` → `~/.copilot/copilot-instructions.md`
-- `claude/rules/*.md` → `~/.copilot/rules/*.instructions.md`
-- `claude/skills/*/SKILL.md` → `~/.copilot/skills/*.instructions.md`
-- `claude/agents/*.md` → merged into `~/.copilot/AGENTS.md`
-- `claude-workspace/CLAUDE.md` → `~/git/.copilot/copilot-instructions.md`
-
-No separate Copilot config directory is needed — edit the `claude/` files and re-run `install.sh` to sync both tools.
-
-## Codex CLI
-
-Codex has its own repo-managed config directory:
-
-- `codex/AGENTS.md` → `~/.codex/AGENTS.md` as a symlink
-- `codex/config.toml` → `~/.codex/config.toml` as a copied base config
-
-`config.toml` is copied instead of symlinked because `install.sh` appends the managed MCP server block after install. That keeps resolved environment values and machine-local runtime changes out of the repository.
-
-Runtime files such as `auth.json`, `history.jsonl`, `sessions/`, logs, cache files, and sqlite state should stay in `~/.codex/` only.
-
-## MCP Sync (Claude + Codex)
-
-`install.sh` treats `claude/mcp-servers.json` as the source of truth for MCP servers, then writes:
-
-- `~/.claude.json` → `.mcpServers`
-- `~/.codex/config.toml` → managed `[mcp_servers.*]` block appended to the base config from `codex/config.toml`
-
-Do not put raw secrets in this repository.
-
-### Secrets via inherited env
-
-MCP subprocesses inherit the parent process env, so the cleanest way to pass
-tokens is to export them in your shell rather than declaring them in
-`mcp-servers.json`. For example, in `~/.zshrc`:
-
-```bash
-export GITHUB_PERSONAL_ACCESS_TOKEN=$(gh auth token 2>/dev/null)
+```powershell
+.\install.ps1
 ```
 
-This keeps tokens out of `~/.claude.json` and `~/.codex/config.toml` on disk.
-Rotating `gh auth` picks up automatically on the next shell.
+Windows uses copies by default. Pass `-Symlink` to link non-AI configuration
+when symbolic-link support is available.
 
-If you still need to declare a literal `env: { KEY: "${VAR}" }` block for a
-server (for example, when the server requires a differently named var),
-`install.sh` resolves `${VAR}` placeholders at install time and warns about
-unset ones.
+### AI configuration
 
-Current servers:
+AI configuration is always copied, never linked. This prevents client-side
+settings updates from modifying repository files. Re-running an installer
+backs up an existing managed AI path under
+`~/.dotfiles_backup/<timestamp>/` before replacing it.
 
-- `github` — repo/issue/PR tools; reads `GITHUB_PERSONAL_ACCESS_TOKEN` from inherited env
-- `serena` — semantic code search and edit over LSP/symbol index
-- `playwright` — browser automation for UI testing
+| Repository source | Installed destinations |
+| --- | --- |
+| `ai/instructions.md` | `~/.claude/CLAUDE.md`, `~/.codex/AGENTS.md`, `~/.copilot/copilot-instructions.md` |
+| `ai/skills/<name>/` | `~/.claude/skills/<name>/`, `~/.agents/skills/<name>/` |
+| `ai/claude/settings*.json` | `~/.claude/settings.json` |
+| `ai/claude/statusline*` | `~/.claude/statusline*` |
+| `ai/codex/config.toml` | `~/.codex/config.toml` |
+| `ai/mcp-servers.json` | `~/.claude.json` and the managed MCP block in `~/.codex/config.toml` |
 
-### Per-target arg overrides
+Authentication, project trust, history, sessions, logs, caches, databases, and
+other machine-local runtime data are intentionally not managed here.
 
-A server entry may include `<target>Args` (e.g. `codexArgs`) to fully replace
-`args` when syncing for that target. `install.sh` passes the target name to
-`resolve_mcp_source`, and the base `args` is used when no override exists.
+## MCP Servers
 
-Example — Serena uses a different `--context` per client:
+The shared MCP configuration currently includes:
 
-```json
-"serena": {
-  "command": "uvx",
-  "args": ["--from", "git+...", "serena", "start-mcp-server", "--context", "ide-assistant"],
-  "codexArgs": ["--from", "git+...", "serena", "start-mcp-server", "--context", "codex"]
-}
-```
+- GitHub through Docker
+- Playwright through `npx`
+- Figma through its remote HTTP endpoint
+
+The GitHub MCP container inherits `GITHUB_PERSONAL_ACCESS_TOKEN` from the
+client environment. Do not store raw secrets in this repository.
 
 ## Dependencies
 
-- [Zim](https://zimfw.sh/) - Zsh framework
-- [Powerlevel10k](https://github.com/romkatv/powerlevel10k) - Zsh theme
-- [TPM](https://github.com/tmux-plugins/tpm) - Tmux Plugin Manager
-- [Ghostty](https://ghostty.org/) - Terminal emulator
-- [Neovim](https://neovim.io/) - Text editor
-- [Claude Code](https://claude.ai/claude-code) - AI coding assistant
-- [GitHub Copilot CLI](https://docs.github.com/en/copilot/github-copilot-in-the-cli) - AI terminal assistant (optional)
+The installers configure tools but do not install them. Install only what you
+use:
+
+- Zim and Powerlevel10k for the provided Zsh setup
+- TPM for Tmux plugins
+- Ghostty, Neovim, Vim, Git, and GitHub CLI for their respective configuration
+- Claude Code, Codex CLI, or GitHub Copilot CLI for AI configuration
+- `jq` and `git` for the Claude status line
+- Docker for the GitHub MCP server
+- Node.js and `npx` for the Playwright MCP server
+- PowerShell 5.1 or newer for the native Windows Claude status line
+- Git Bash only when using the optional Windows Bash status line
