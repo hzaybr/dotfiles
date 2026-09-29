@@ -5,7 +5,15 @@ input=$(cat)
 # Claude Code captures stdout (it is a pipe, not a TTY), so `tput cols` cannot
 # read the real width. Claude sets COLUMNS to the terminal width (v2.1.153+);
 # fall back to tput, then 80, for older versions or early-startup renders.
-TERM_WIDTH=${COLUMNS:-$(tput cols 2>/dev/null || echo 80)}
+# zsh reports an unset COLUMNS as 0, so test the value instead of using :-.
+if (( COLUMNS > 0 )); then
+  TERM_WIDTH=$COLUMNS
+else
+  TERM_WIDTH=$(tput cols 2>/dev/null || echo 80)
+fi
+# Claude renders the status line inside a footer with 2 columns of padding on
+# each side and truncates anything wider, so the usable width is 4 narrower.
+LINE_WIDTH=$((TERM_WIDTH - 4))
 
 MODEL_DISPLAY=$(echo "$input" | jq -r '.model.display_name // .model.id')
 MODEL_DISPLAY=${MODEL_DISPLAY%%" ("*}  # drop trailing parenthetical, e.g. " (1M context)"
@@ -51,16 +59,13 @@ fi
 
 RIGHT_PLAIN="${MODEL_DISPLAY}${CONTEXT_REMAINING:+ ${CONTEXT_REMAINING}}"
 
-# Visible width of a prompt string: expand prompt escapes, strip ANSI codes,
-# then add 1 column per Nerd Font icon (they render two cells wide).
+# Visible width of a prompt string: expand prompt escapes and strip ANSI codes.
+# Nerd Font icons count as one column, matching how Claude measures the line.
 visible_length() {
   emulate -L zsh
   setopt extendedglob
   local stripped=${${(%)1}//$'\e'\[[0-9;]##[a-zA-Z]/}
-  local base=${#stripped}
-  local no_icons=${stripped//[󰣙󰘬󰆼󱘺]/}
-  local extra=$((base - ${#no_icons}))
-  print -r -- $((base + extra))
+  print -r -- ${#stripped}
 }
 
 RIGHT_LEN=$(visible_length "$RIGHT_PLAIN")
@@ -75,9 +80,9 @@ else
 fi
 
 # Truncate the directory (keeping its tail) when the whole line would not fit.
-# Reserve 1 trailing column so the terminal never wraps on the final cell.
+# Keep at least 1 space between the left and right parts.
 FIXED_LEN=$(( $(visible_length "$HOST_PART") + $(visible_length "$GIT_PART") ))
-DIR_BUDGET=$((TERM_WIDTH - 2 - RIGHT_LEN - FIXED_LEN))
+DIR_BUDGET=$((LINE_WIDTH - 1 - RIGHT_LEN - FIXED_LEN))
 if (( ${#SHORT_DIR} > DIR_BUDGET )); then
   if (( DIR_BUDGET > 1 )); then
     TAIL=$((DIR_BUDGET - 1))
@@ -90,7 +95,7 @@ fi
 LEFT_PLAIN="${HOST_PART}%F{blue}${SHORT_DIR}%f${GIT_PART}"
 LEFT_LEN=$(visible_length "$LEFT_PLAIN")
 
-SPACING=$((TERM_WIDTH - 1 - LEFT_LEN - RIGHT_LEN))
+SPACING=$((LINE_WIDTH - LEFT_LEN - RIGHT_LEN))
 (( SPACING < 1 )) && SPACING=1
 
 STATUS_LINE="${LEFT_PLAIN}$(printf '%*s' $SPACING)${RIGHT_PLAIN}"
