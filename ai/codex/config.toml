@@ -1,6 +1,7 @@
 personality = "pragmatic"
 
 [tui]
+vim_mode_default = true
 alternate_screen = "never"
 show_tooltips = false
 notifications = true
