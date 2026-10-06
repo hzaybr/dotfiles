@@ -160,29 +160,6 @@ function Backup-AndCopy {
     Write-Info "Copied $Source -> $Destination"
 }
 
-function Install-Skills {
-    param(
-        [string]$SourceDir,
-        [string]$DestinationDir
-    )
-
-    if (-not (Test-Path -LiteralPath $SourceDir)) {
-        return
-    }
-
-    Get-ChildItem -LiteralPath $SourceDir -Directory | ForEach-Object {
-        $skillMd = Join-Path $_.FullName "SKILL.md"
-        if (-not (Test-Path -LiteralPath $skillMd)) {
-            Write-Warn "Skipping skill without SKILL.md: $($_.FullName)"
-        } else {
-            Backup-AndCopy `
-                -Source $_.FullName `
-                -Destination (Join-Path $DestinationDir $_.Name) `
-                -IsDirectory
-        }
-    }
-}
-
 # UTF-8 (no BOM) writers; PS 5.1 Set-Content -Encoding utf8 emits a BOM
 # that breaks some JSON/TOML parsers.
 function Write-Utf8Text {
@@ -486,9 +463,7 @@ if (Test-Path -LiteralPath $AiDir) {
     $claudeDir = Join-Path $env:USERPROFILE ".claude"
     $codexDir = Join-Path $env:USERPROFILE ".codex"
     $copilotDir = Join-Path $env:USERPROFILE ".copilot"
-    $sharedSkillsDir = Join-Path $env:USERPROFILE ".agents\skills"
     $instructionsSource = Join-Path $AiDir "instructions.md"
-    $skillsSource = Join-Path $AiDir "skills"
     $mcpSource = Join-Path $AiDir "mcp-servers.json"
 
     # Shared global instructions
@@ -526,10 +501,6 @@ if (Test-Path -LiteralPath $AiDir) {
             -Destination (Join-Path $claudeDir "statusline-windows.sh")
     }
 
-    Install-Skills `
-        -SourceDir $skillsSource `
-        -DestinationDir (Join-Path $claudeDir "skills")
-
     # Codex CLI
     $codexConfig = Join-Path $AiDir "codex\config.toml"
     if (Test-Path -LiteralPath $codexConfig) {
@@ -537,11 +508,6 @@ if (Test-Path -LiteralPath $AiDir) {
             -Source $codexConfig `
             -Destination (Join-Path $codexDir "config.toml")
     }
-
-    # Codex and Copilot both discover personal skills under ~/.agents/skills.
-    Install-Skills `
-        -SourceDir $skillsSource `
-        -DestinationDir $sharedSkillsDir
 
     # MCP servers are synced to Claude and Codex from one source of truth.
     if (Test-Path -LiteralPath $mcpSource) {

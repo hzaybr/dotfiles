@@ -59,7 +59,6 @@ backs up an existing managed AI path under
 | Repository source | Installed destinations |
 | --- | --- |
 | `ai/instructions.md` | `~/.claude/CLAUDE.md`, `~/.codex/AGENTS.md`, `~/.copilot/copilot-instructions.md` |
-| `ai/skills/<name>/` | `~/.claude/skills/<name>/`, `~/.agents/skills/<name>/` |
 | `ai/claude/settings*.json` | `~/.claude/settings.json` |
 | `ai/claude/statusline*` | `~/.claude/statusline*` |
 | `ai/codex/config.toml` | `~/.codex/config.toml` |

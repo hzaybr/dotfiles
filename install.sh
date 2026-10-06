@@ -60,26 +60,6 @@ backup_and_copy() {
 	log_info "Copied $src -> $dest"
 }
 
-install_skills() {
-	local source_dir="$1"
-	local destination_dir="$2"
-	local skill_dir
-	local skill_name
-
-	[ -d "$source_dir" ] || return 0
-
-	for skill_dir in "$source_dir"/*; do
-		[ -d "$skill_dir" ] || continue
-		if [ ! -f "$skill_dir/SKILL.md" ]; then
-			log_warn "Skipping skill without SKILL.md: $skill_dir"
-			continue
-		fi
-
-		skill_name=$(basename "$skill_dir")
-		backup_and_copy "$skill_dir" "$destination_dir/$skill_name"
-	done
-}
-
 # Warn for unresolved MCP env placeholders like ${VAR} or $VAR.
 warn_missing_mcp_env_vars() {
 	local source="$1"
@@ -339,9 +319,7 @@ if [ -d "$AI_DIR" ]; then
 	CLAUDE_DIR="$HOME/.claude"
 	CODEX_DIR="$HOME/.codex"
 	COPILOT_DIR="$HOME/.copilot"
-	SHARED_SKILLS_DIR="$HOME/.agents/skills"
 	INSTRUCTIONS_SOURCE="$AI_DIR/instructions.md"
-	SKILLS_SOURCE="$AI_DIR/skills"
 	MCP_SOURCE="$AI_DIR/mcp-servers.json"
 
 	# Shared global instructions
@@ -358,15 +336,11 @@ if [ -d "$AI_DIR" ]; then
 	if [ -f "$AI_DIR/claude/statusline.sh" ]; then
 		backup_and_copy "$AI_DIR/claude/statusline.sh" "$CLAUDE_DIR/statusline.sh"
 	fi
-	install_skills "$SKILLS_SOURCE" "$CLAUDE_DIR/skills"
 
 	# Codex CLI
 	if [ -f "$AI_DIR/codex/config.toml" ]; then
 		backup_and_copy "$AI_DIR/codex/config.toml" "$CODEX_DIR/config.toml"
 	fi
-
-	# Codex and Copilot both discover personal skills under ~/.agents/skills.
-	install_skills "$SKILLS_SOURCE" "$SHARED_SKILLS_DIR"
 
 	# MCP servers are synced to Claude and Codex from one source of truth.
 	if [ -f "$MCP_SOURCE" ]; then
