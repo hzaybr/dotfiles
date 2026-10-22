@@ -294,11 +294,6 @@ if [ -f "$DOTFILES_DIR/gh/config.yml" ]; then
 	backup_and_link "$DOTFILES_DIR/gh/config.yml" "$HOME/.config/gh/config.yml"
 fi
 
-# Hammerspoon (macOS only)
-if [ "$(uname)" = "Darwin" ] && [ -f "$DOTFILES_DIR/hammerspoon/init.lua" ]; then
-	backup_and_link "$DOTFILES_DIR/hammerspoon/init.lua" "$HOME/.hammerspoon/init.lua"
-fi
-
 # Ghostty
 if [ -f "$DOTFILES_DIR/ghostty/config" ]; then
 	if [ "$(uname)" = "Darwin" ]; then

@@ -15,7 +15,6 @@ dotfiles/
 │   └── mcp-servers.json # Shared MCP source of truth
 ├── ghostty/
 ├── git/
-├── hammerspoon/
 ├── nvim/
 ├── tmux/
 ├── vim/
