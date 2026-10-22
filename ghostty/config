@@ -27,7 +27,7 @@ font-codepoint-map = U+4E00-U+9FFF,U+3000-U+303F,U+FF00-U+FFEF,U+FE30-U+FE4F=Hei
 font-codepoint-map = U+4E00-U+9FFF=Heiti TC
 
 # ----- macOS-specific settings -----
-macos-titlebar-style = tabs
+macos-titlebar-style = native
 macos-option-as-alt = true
 macos-icon = official
 
