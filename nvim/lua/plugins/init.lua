@@ -47,6 +47,26 @@ return {
     opts = require "configs.gitsigns",
   },
 
+  {
+    "sindrets/diffview.nvim",
+    dependencies = { "nvim-tree/nvim-web-devicons" },
+    cmd = { "DiffviewOpen", "DiffviewFileHistory" },
+    keys = {
+      { "<leader>gd", "<cmd>DiffviewOpen<CR>", desc = "Diffview working tree" },
+      { "<leader>gm", "<cmd>DiffviewOpen main...HEAD<CR>", desc = "Diffview branch vs main" },
+      { "<leader>gh", "<cmd>DiffviewFileHistory %<CR>", desc = "Diffview current file history" },
+      { "<leader>gh", ":DiffviewFileHistory<CR>", mode = "v", desc = "Diffview selected lines history" },
+      { "<leader>gH", "<cmd>DiffviewFileHistory<CR>", desc = "Diffview repo history" },
+      { "<leader>gq", "<cmd>DiffviewClose<CR>", desc = "Diffview close" },
+    },
+    opts = {
+      enhanced_diff_hl = true,
+      view = {
+        merge_tool = { layout = "diff3_mixed" },
+      },
+    },
+  },
+
   -- test new blink
   -- { import = "nvchad.blink.lazyspec" },
 
