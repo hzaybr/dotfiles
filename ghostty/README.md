@@ -11,8 +11,7 @@
 
 Install the following fonts:
 
-- **RecMonoLinear Nerd Font** — primary monospace font
-- **RecMonoDuotone Nerd Font** — bold variant
+- **RecMonoLinear Nerd Font** — primary and bold monospace font
 - **Heiti TC** — CJK fallback for Chinese characters
 
 Nerd Fonts can be installed via:
@@ -33,8 +32,9 @@ brew install --cask font-recursive-mono-nerd-font
 
 ## What it configures
 
-- Nord color theme
-- Font size 18, cell height adjustment
-- macOS: native titlebar with tabs, Option as Alt
+- Vesper color theme (alternatives are commented out in `config`)
+- Font size 16, cell height adjustment, Heiti TC for CJK characters
+- macOS: native titlebar, Option as Alt
+- Split keybindings (`Ctrl-Shift-d/s` to split, `Ctrl-h/j/k/l` to move)
 - Window state persistence across restarts
 - Shell integration (cursor styling disabled)

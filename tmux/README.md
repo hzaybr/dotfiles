@@ -34,6 +34,5 @@ tmux
 
 - Prefix key: `Ctrl-a` (instead of default `Ctrl-b`)
 - Vim-style pane navigation (`h/j/k/l`)
-- Mouse support enabled
 - 256-color and RGB support
 - Default shell: `/bin/zsh`

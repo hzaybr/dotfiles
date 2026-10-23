@@ -2,7 +2,7 @@
 
 ## Prerequisites
 
-### Neovim (>= 0.10)
+### Neovim (>= 0.11)
 
 - macOS: `brew install neovim`
 - Linux (Debian/Ubuntu): `sudo apt install neovim` (note: apt version may be too old; use [GitHub releases](https://github.com/neovim/neovim/releases) or the [PPA](https://launchpad.net/~neovim-ppa/+archive/ubuntu/unstable) for latest)
@@ -10,7 +10,6 @@
 
 ### Node.js (for LSP servers)
 
-- fnm: `fnm install --lts`
 - nvm: `nvm install --lts`
 
 ### Package Managers
@@ -69,4 +68,4 @@ nvim
 - **Framework**: NvChad v2.5 (via Lazy.nvim)
 - **LSP servers**: bash, css, docker, html, json, lua, markdown (marksman), python (pyright), rust, svelte, tailwindcss, typescript, yaml, zig
 - **Formatters** (format on save): stylua, prettier/prettierd, ruff, rustfmt, shfmt, zigfmt, fixjson
-- **Plugins**: Copilot, gitsigns, nvim-tree, treesitter, render-markdown, presenting.nvim, image.nvim
+- **Plugins**: Copilot, gitsigns, diffview, nvim-tree, treesitter, render-markdown, presenting.nvim, image.nvim

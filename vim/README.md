@@ -11,7 +11,7 @@
 
 ### Node.js (coc.nvim dependency)
 
-- All platforms: `nvm install --lts` or `fnm install --lts`
+- All platforms: `nvm install --lts`
 
 ### Package Managers
 
@@ -44,7 +44,7 @@ uv tool install isort
 Open vim and run:
 
 ```vim
-:CocInstall coc-tsserver coc-json coc-html coc-css coc-pyright coc-svelte coc-prettier coc-sh
+:CocInstall coc-tsserver coc-json coc-html coc-css coc-pyright coc-svelte coc-prettier
 ```
 
 ### Copilot

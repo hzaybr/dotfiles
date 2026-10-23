@@ -25,10 +25,11 @@ A [Nerd Font](https://www.nerdfonts.com/) is required for Powerlevel10k icons. R
 - macOS: `brew install fzf`
 - Linux (Debian/Ubuntu): `sudo apt install fzf`
 
-### Node.js version manager (optional)
+### nvm (optional, Node.js version manager)
 
-- fnm: `brew install fnm` or `curl -fsSL https://fnm.vercel.app/install | bash`
-- nvm: `curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/HEAD/install.sh | bash`
+```bash
+curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/HEAD/install.sh | bash
+```
 
 ### Bun (optional)
 

@@ -16,7 +16,7 @@
 
 ## What it configures
 
-- Custom aliases (gs, gb, gd, gl, etc.)
+- Short aliases: `a` (add), `cm` (commit), `co` (checkout), `b` (branch), `d` (diff), `s` (short status), `l` (compact log)
 - Vim as default editor
 - Simple push strategy
 
