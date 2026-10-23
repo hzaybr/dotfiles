@@ -417,39 +417,11 @@ if (Test-Path $gitConfig) {
     Backup-AndLink -Source $gitConfig -Destination (Join-Path $env:USERPROFILE ".gitconfig")
 }
 
-# GitHub CLI
-$ghConfig = Join-Path $DotfilesDir "gh\config.yml"
-if (Test-Path $ghConfig) {
-    $ghConfigDir = Join-Path $env:APPDATA "GitHub CLI"
-    Backup-AndLink -Source $ghConfig -Destination (Join-Path $ghConfigDir "config.yml")
-}
-
 # Neovim
 $nvimDir = Join-Path $DotfilesDir "nvim"
 if (Test-Path $nvimDir) {
     $nvimConfigDir = Join-Path $env:LOCALAPPDATA "nvim"
     Backup-AndLink -Source $nvimDir -Destination $nvimConfigDir -IsDirectory
-}
-
-# Windows Terminal (if settings exist)
-$wtSettings = Join-Path $DotfilesDir "windows-terminal\settings.json"
-if (Test-Path $wtSettings) {
-    # Windows Terminal from Microsoft Store
-    $wtDir = Get-ChildItem -Path (Join-Path $env:LOCALAPPDATA "Packages") -Filter "Microsoft.WindowsTerminal_*" -Directory -ErrorAction SilentlyContinue | Select-Object -First 1
-    if ($wtDir) {
-        $wtSettingsPath = Join-Path $wtDir.FullName "LocalState\settings.json"
-        Backup-AndLink -Source $wtSettings -Destination $wtSettingsPath
-    }
-}
-
-# PowerShell profile
-$psProfile = Join-Path $DotfilesDir "powershell\Microsoft.PowerShell_profile.ps1"
-if (Test-Path $psProfile) {
-    $psProfileDir = Split-Path $PROFILE -Parent
-    if (-not (Test-Path $psProfileDir)) {
-        New-Item -ItemType Directory -Path $psProfileDir -Force | Out-Null
-    }
-    Backup-AndLink -Source $psProfile -Destination $PROFILE
 }
 
 # AI clients

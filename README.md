@@ -84,7 +84,7 @@ use:
 
 - Zim and Powerlevel10k for the provided Zsh setup
 - TPM for Tmux plugins
-- Ghostty, Neovim, Vim, Git, and GitHub CLI for their respective configuration
+- Ghostty, Neovim, Vim, and Git for their respective configuration
 - Claude Code, Codex CLI, or GitHub Copilot CLI for AI configuration
 - `jq` and `git` for the Claude status line
 - Docker for the GitHub MCP server

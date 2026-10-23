@@ -286,11 +286,6 @@ if [ -f "$DOTFILES_DIR/git/.gitconfig" ]; then
 	backup_and_link "$DOTFILES_DIR/git/.gitconfig" "$HOME/.gitconfig"
 fi
 
-# GitHub CLI
-if [ -f "$DOTFILES_DIR/gh/config.yml" ]; then
-	backup_and_link "$DOTFILES_DIR/gh/config.yml" "$HOME/.config/gh/config.yml"
-fi
-
 # Ghostty
 if [ -f "$DOTFILES_DIR/ghostty/config" ]; then
 	if [ "$(uname)" = "Darwin" ]; then
