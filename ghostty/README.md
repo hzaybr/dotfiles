@@ -32,7 +32,7 @@ brew install --cask font-recursive-mono-nerd-font
 
 ## What it configures
 
-- Vesper color theme (alternatives are commented out in `config`)
+- Vesper color theme (alternatives are commented out in `config.ghostty`)
 - Font size 16, cell height adjustment, Heiti TC for CJK characters
 - macOS: native titlebar, Option as Alt
 - Native Cmd keybindings for splits and tabs (`Cmd-d`, `Cmd-[`/`Cmd-]`, `Cmd-Opt-arrows`); run `ghostty +list-keybinds` to see them

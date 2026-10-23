@@ -287,13 +287,18 @@ if [ -f "$DOTFILES_DIR/git/.gitconfig" ]; then
 fi
 
 # Ghostty
-if [ -f "$DOTFILES_DIR/ghostty/config" ]; then
+if [ -f "$DOTFILES_DIR/ghostty/config.ghostty" ]; then
 	if [ "$(uname)" = "Darwin" ]; then
 		GHOSTTY_DIR="$HOME/Library/Application Support/com.mitchellh.ghostty"
 	else
 		GHOSTTY_DIR="${XDG_CONFIG_HOME:-$HOME/.config}/ghostty"
 	fi
-	backup_and_link "$DOTFILES_DIR/ghostty/config" "$GHOSTTY_DIR/config"
+	# Ghostty loads both `config` and `config.ghostty`; drop a stale link to
+	# the old file name so settings are not applied twice.
+	if [ -L "$GHOSTTY_DIR/config" ]; then
+		rm "$GHOSTTY_DIR/config"
+	fi
+	backup_and_link "$DOTFILES_DIR/ghostty/config.ghostty" "$GHOSTTY_DIR/config.ghostty"
 fi
 
 # Neovim
