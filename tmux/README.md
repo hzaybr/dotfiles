@@ -32,7 +32,9 @@ tmux
 
 ## What it configures
 
-- Prefix key: `Ctrl-a` (instead of default `Ctrl-b`)
-- Vim-style pane navigation (`h/j/k/l`)
+- Prefix key: `Ctrl-a` (instead of default `Ctrl-b`); `Ctrl-a Ctrl-a` jumps to the last window, `Ctrl-a a` sends a literal `Ctrl-a`
+- `c` new window, `|` / `-` split side by side / stacked, all in the current directory
+- Vim-style pane navigation (`h/j/k/l`) and vi copy mode
+- Every other key keeps the tmux default (`n`/`p`, `w`/`s` pickers, `d`, `,`, `&`, `x`, `z`, `[`)
 - 256-color and RGB support
 - Default shell: `/bin/zsh`
