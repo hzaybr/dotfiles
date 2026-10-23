@@ -26,9 +26,14 @@ brew install --cask font-recursive-mono-nerd-font
 ## Install
 
 ```bash
-# Symlink (handled by install.sh)
+# Symlink to ~/.config/ghostty/config.ghostty (handled by install.sh)
 ./install.sh
 ```
+
+The same path is used on macOS and Linux. On macOS, Ghostty also reads
+`~/Library/Application Support/com.mitchellh.ghostty/` after it, so keep no
+`config` or `config.ghostty` there; the installer removes old links and warns
+about regular files.
 
 ## What it configures
 

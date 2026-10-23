@@ -288,16 +288,21 @@ fi
 
 # Ghostty
 if [ -f "$DOTFILES_DIR/ghostty/config.ghostty" ]; then
-	if [ "$(uname)" = "Darwin" ]; then
-		GHOSTTY_DIR="$HOME/Library/Application Support/com.mitchellh.ghostty"
-	else
-		GHOSTTY_DIR="${XDG_CONFIG_HOME:-$HOME/.config}/ghostty"
-	fi
-	# Ghostty loads both `config` and `config.ghostty`; drop a stale link to
-	# the old file name so settings are not applied twice.
-	if [ -L "$GHOSTTY_DIR/config" ]; then
-		rm "$GHOSTTY_DIR/config"
-	fi
+	GHOSTTY_DIR="${XDG_CONFIG_HOME:-$HOME/.config}/ghostty"
+	# Ghostty loads both `config` and `config.ghostty`, and on macOS it loads
+	# Application Support after the XDG directory, so leftovers there would
+	# override or duplicate this config. Remove old links; warn about files.
+	for stale_dir in "$GHOSTTY_DIR" "$HOME/Library/Application Support/com.mitchellh.ghostty"; do
+		for stale in "$stale_dir/config" "$stale_dir/config.ghostty"; do
+			[ "$stale" = "$GHOSTTY_DIR/config.ghostty" ] && continue
+			if [ -L "$stale" ]; then
+				rm "$stale"
+				log_info "Removed stale Ghostty config link $stale"
+			elif [ -e "$stale" ]; then
+				log_warn "Ghostty also loads $stale; move it away so it does not override the dotfiles config"
+			fi
+		done
+	done
 	backup_and_link "$DOTFILES_DIR/ghostty/config.ghostty" "$GHOSTTY_DIR/config.ghostty"
 fi
 
