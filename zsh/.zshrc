@@ -138,36 +138,20 @@ alias ll='ls -l'
 alias la='ls -A'
 alias lla='ls -al'
 alias l='ls -CF'
-alias k='ls'
-alias sl='ls -CF'
-alias ks='ls -CF'
 alias lt='ls -tl'
 
 alias cls='clear && ls'
 alias cp='cp -i'
-alias du='du -h'
-alias h='history | grep'
 alias mv='mv -i'
 alias vi='nvim'
-alias iv='nvim'
-alias vu='nvim'
-alias ci='nvim'
-alias bi='nvim'
-alias vo='nvim'
 
 alias tx='tmux attach'
 alias tl='tmux ls'
 alias tk='tmux kill-session -t'
 alias tn='tmux new -s'
 
-alias py='python3'
 alias src='source'
-alias da='deactivate'
-alias gs='git status'
 
-function ve(){
-  source "$1"/bin/activate
-}
 zmodload -F zsh/terminfo +p:terminfo
 # Bind ^[[A/^[[B manually so up/down works both before and after zle-line-init
 for key ('^[[A' '^P' ${terminfo[kcuu1]}) bindkey ${key} history-substring-search-up
