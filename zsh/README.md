@@ -8,15 +8,11 @@
 - Linux (Debian/Ubuntu): `sudo apt install zsh`
 - Linux (Arch): `sudo pacman -S zsh`
 
-### Zim (plugin manager)
+### Zim (plugin manager) and Powerlevel10k (theme)
 
-```bash
-curl -fsSL https://raw.githubusercontent.com/zimfw/install/master/install.zsh | zsh
-```
-
-### Powerlevel10k (theme)
-
-Installed automatically via Zim modules in `.zimrc`.
+No manual install needed. On the first shell launch, `.zshrc` downloads zimfw
+into `~/.zim` and installs every module listed in `.zimrc`, including
+Powerlevel10k. Do not run Zim's own installer script; it edits `~/.zshrc`.
 
 ### Nerd Font
 
@@ -51,13 +47,13 @@ curl -fsSL https://bun.sh/install | bash
 # Symlink (handled by install.sh)
 ./install.sh
 
-# Zim will auto-install modules on first shell launch
+# Open a new shell; Zim installs zimfw and all modules on first launch
 ```
 
 ## What it configures
 
 - Zim modules: completions, syntax highlighting, history substring search, autosuggestions
-- Powerlevel10k instant prompt
+- Powerlevel10k prompt (managed by Zim, configured in `.p10k.zsh`) with instant prompt
 - fzf keybindings (Ctrl+R history, Ctrl+T file search, Alt+C cd)
 - PATH additions: Homebrew, Mason (nvim LSPs), Bun, Zig
 - Machine-specific overrides via `~/.zshrc.local` (sourced if exists)
