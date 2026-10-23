@@ -285,9 +285,6 @@ fi
 if [ -f "$DOTFILES_DIR/git/.gitconfig" ]; then
 	backup_and_link "$DOTFILES_DIR/git/.gitconfig" "$HOME/.gitconfig"
 fi
-if [ -f "$DOTFILES_DIR/git/ignore" ]; then
-	backup_and_link "$DOTFILES_DIR/git/ignore" "$HOME/.config/git/ignore"
-fi
 
 # GitHub CLI
 if [ -f "$DOTFILES_DIR/gh/config.yml" ]; then

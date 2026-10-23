@@ -19,7 +19,6 @@
 - Custom aliases (gs, gb, gd, gl, etc.)
 - Vim as default editor
 - Simple push strategy
-- Global gitignore (OS files, editor files, build artifacts)
 
 ## Post-install
 

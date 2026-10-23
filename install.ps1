@@ -417,12 +417,6 @@ if (Test-Path $gitConfig) {
     Backup-AndLink -Source $gitConfig -Destination (Join-Path $env:USERPROFILE ".gitconfig")
 }
 
-$gitIgnore = Join-Path $DotfilesDir "git\ignore"
-if (Test-Path $gitIgnore) {
-    $gitConfigDir = Join-Path $env:USERPROFILE ".config\git"
-    Backup-AndLink -Source $gitIgnore -Destination (Join-Path $gitConfigDir "ignore")
-}
-
 # GitHub CLI
 $ghConfig = Join-Path $DotfilesDir "gh\config.yml"
 if (Test-Path $ghConfig) {
