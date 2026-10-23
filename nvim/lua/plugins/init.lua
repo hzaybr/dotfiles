@@ -25,8 +25,6 @@ return {
         vim.fn.feedkeys(vim.fn["copilot#Accept"](), "")
       end, { desc = "Copilot Accept All" })
       map("i", "<C-y>", "<Plug>(copilot-accept-line)", { desc = "Copilot Accept Line" })
-      map("i", "<C-]>", "<Plug>(copilot-next)")
-      map("i", "<C-x>", "<Plug>(copilot-dismiss)")
     end,
   },
 

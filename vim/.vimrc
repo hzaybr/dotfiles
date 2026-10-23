@@ -273,9 +273,7 @@ nnoremap <leader>fs :CocList symbols<CR>
 " --- Copilot ---
 let g:copilot_no_tab_map = v:true
 inoremap <silent><script><expr> <C-g> copilot#Accept()
-inoremap <C-y> <Plug>(copilot-accept-line)
-inoremap <C-]> <Plug>(copilot-next)
-inoremap <C-x> <Plug>(copilot-dismiss)
+imap <C-y> <Plug>(copilot-accept-line)
 
 " --- Fugitive ---
 nnoremap <leader>gs :Git<CR>
