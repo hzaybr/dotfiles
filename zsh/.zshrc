@@ -150,8 +150,6 @@ alias cp='cp -i'
 alias du='du -h'
 alias h='history | grep'
 alias mv='mv -i'
-alias rm='_rm'
-alias rrm='/bin/rm -i'  # real rm
 alias vi='nvim'
 alias iv='nvim'
 alias vu='nvim'
@@ -168,14 +166,6 @@ alias py='python3'
 alias src='source'
 alias da='deactivate'
 alias gs='git status'
-
-function _rm() {
-while [ $# -ge 1 ]; do
-    mv -f "$1" $HOME/tmp
-    echo "$1 deleted."
-    shift
-done
-}
 
 function ve(){
   source "$1"/bin/activate
