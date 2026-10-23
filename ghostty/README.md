@@ -35,6 +35,6 @@ brew install --cask font-recursive-mono-nerd-font
 - Vesper color theme (alternatives are commented out in `config`)
 - Font size 16, cell height adjustment, Heiti TC for CJK characters
 - macOS: native titlebar, Option as Alt
-- Split keybindings (`Ctrl-Shift-d/s` to split, `Ctrl-h/j/k/l` to move)
+- Native Cmd keybindings for splits and tabs (`Cmd-d`, `Cmd-[`/`Cmd-]`, `Cmd-Opt-arrows`); run `ghostty +list-keybinds` to see them
 - Window state persistence across restarts
 - Shell integration (cursor styling disabled)

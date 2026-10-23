@@ -33,19 +33,8 @@ shell-integration-features = "no-cursor"
 selection-background = #505050
 
 # ----- key bindings -----
-keybind = ctrl+shift+d=new_split:right
-keybind = ctrl+shift+s=new_split:down
-keybind = ctrl+l=goto_split:right
-keybind = ctrl+h=goto_split:left
-keybind = ctrl+j=goto_split:down
-keybind = ctrl+k=goto_split:up
-keybind = ctrl+shift+comma=resize_split:left,10
-keybind = ctrl+shift+period=resize_split:right,10
-keybind = ctrl+shift+equal=equalize_splits
-keybind = ctrl+shift+semicolon=resize_split:down,10
-keybind = ctrl+shift+apostrophe=resize_split:up,10
-keybind = ctrl+shift+w=close_surface
-keybind = ctrl+shift+l=clear_screen
+# Splits, tabs and clearing use the native Cmd shortcuts (`ghostty +list-keybinds`),
+# leaving Ctrl-h/j/k/l to the shell, tmux and Neovim.
 keybind = ctrl+left_bracket=text:\x1b
 
 window-save-state = always
