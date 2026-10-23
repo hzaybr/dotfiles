@@ -132,14 +132,12 @@ alias ..='cd ../'                           # Go back 1 directory level
 alias ...='cd ../../'                       # Go back 2 directory levels
 alias ....='cd ../../../'                   # Go back 3 directory levels
 alias .....='cd ../../../../'               # Go back 4 directory levels
-alias .....='cd ../../../../'               # Go back 5 directory levels
-alias ......='cd ../../../../../'           # Go back 6 directory levels
+alias ......='cd ../../../../../'           # Go back 5 directory levels
 
 alias ll='ls -l'
 alias la='ls -A'
 alias lla='ls -al'
 alias l='ls -CF'
-alias ks='ls'
 alias k='ls'
 alias sl='ls -CF'
 alias ks='ls -CF'
@@ -195,7 +193,7 @@ export PATH="$HOME/.local/bin:$HOME/.local/share/nvim/mason/bin:$HOME/.local/zig
 # GitHub token for MCP servers (inherited by child processes; never written to disk)
 command -v gh >/dev/null 2>&1 && export GITHUB_PERSONAL_ACCESS_TOKEN="$(gh auth token 2>/dev/null)"
 
-# NVM (lazy load)
+# NVM
 [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
 [ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"
 
@@ -203,21 +201,16 @@ command -v gh >/dev/null 2>&1 && export GITHUB_PERSONAL_ACCESS_TOKEN="$(gh auth 
 [ -s "$HOME/.bun/_bun" ] && source "$HOME/.bun/_bun"
 
 # fzf shell integration (Ctrl+R history, Ctrl+T files, Alt+C cd)
-command -v fzf &>/dev/null && eval "$(fzf --zsh)"
-
-# fzf (Ctrl+R history search, Ctrl+T file search, Alt+C cd)
-[ -f "$HOME/.fzf.zsh" ] && source "$HOME/.fzf.zsh"
-# Fallback: brew or vim-plug fzf
+# Fall back to a git or vim-plug install when fzf is not on PATH.
 if ! command -v fzf &>/dev/null; then
-  for fzf_path in /opt/homebrew/opt/fzf "$HOME/.vim/plugged/fzf"; do
-    if [ -d "$fzf_path" ]; then
+  for fzf_path in "$HOME/.fzf" "$HOME/.vim/plugged/fzf"; do
+    if [ -x "$fzf_path/bin/fzf" ]; then
       export PATH="$fzf_path/bin:$PATH"
-      [ -f "$fzf_path/shell/key-bindings.zsh" ] && source "$fzf_path/shell/key-bindings.zsh"
-      [ -f "$fzf_path/shell/completion.zsh" ] && source "$fzf_path/shell/completion.zsh"
       break
     fi
   done
 fi
+command -v fzf &>/dev/null && eval "$(fzf --zsh)"
 
 # Machine-specific overrides (not tracked in git)
 [[ -f ~/.zshrc.local ]] && source ~/.zshrc.local
