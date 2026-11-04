@@ -35,6 +35,5 @@ selection-background = #505050
 # ----- key bindings -----
 # Splits, tabs and clearing use the native Cmd shortcuts (`ghostty +list-keybinds`),
 # leaving Ctrl-h/j/k/l to the shell, tmux and Neovim.
-keybind = ctrl+left_bracket=text:\x1b
 
 window-save-state = always
