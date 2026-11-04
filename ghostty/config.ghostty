@@ -33,10 +33,12 @@ shell-integration-features = "no-cursor"
 selection-background = #505050
 
 # ----- key bindings -----
-# Splits, tabs and resizing use the native Cmd shortcuts (`ghostty +list-keybinds`).
-# Ctrl-Shift-h/j/k/l moves between splits; `performable:` passes the key through
-# when there is no split in that direction, and plain Ctrl-h/j/k/l stay with the
-# shell, tmux and Neovim.
+# Tabs and resizing use the native Cmd shortcuts (`ghostty +list-keybinds`).
+# Ctrl-Shift-d/s creates splits and Ctrl-Shift-h/j/k/l moves between them;
+# `performable:` passes the key through when there is no split in that
+# direction, and plain Ctrl-h/j/k/l stay with the shell, tmux and Neovim.
+keybind = ctrl+shift+d=new_split:right
+keybind = ctrl+shift+s=new_split:down
 keybind = performable:ctrl+shift+h=goto_split:left
 keybind = performable:ctrl+shift+j=goto_split:down
 keybind = performable:ctrl+shift+k=goto_split:up

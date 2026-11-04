@@ -40,7 +40,7 @@ about regular files.
 - Vesper color theme (alternatives are commented out in `config.ghostty`)
 - Font size 16, cell height adjustment, Heiti TC for CJK characters
 - macOS: native titlebar, Option as Alt
-- Native Cmd keybindings for splits and tabs (`Cmd-d`, `Cmd-[`/`Cmd-]`); run `ghostty +list-keybinds` to see them
-- `Ctrl-Shift-h/j/k/l` to move between splits (passed through when there is no split in that direction)
+- Native Cmd keybindings for tabs and resizing; run `ghostty +list-keybinds` to see them
+- `Ctrl-Shift-d`/`Ctrl-Shift-s` to split right/down, `Ctrl-Shift-h/j/k/l` to move between splits (passed through when there is no split in that direction)
 - Window state persistence across restarts
 - Shell integration (cursor styling disabled)
