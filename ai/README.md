@@ -28,19 +28,16 @@ enable language integrations only where they are useful.
 
 `mcp-servers.json` currently configures:
 
-- GitHub through the official Docker-based MCP server.
 - Playwright through `npx`.
 - Figma through its remote HTTP endpoint.
 
-Do not store raw secrets in this repository. The GitHub server reads
-`GITHUB_PERSONAL_ACCESS_TOKEN` from the environment inherited by the client.
+Do not store raw secrets in this repository.
 
 ## Dependencies
 
 - `git` and `jq` are required by the status-line scripts.
 - PowerShell 5.1 or newer is required for the native Windows status line.
 - Git Bash is required only for the optional Windows Bash status line.
-- Docker is required for the GitHub MCP server.
 - Node.js and `npx` are required for the Playwright MCP server.
 
 Only install dependencies for the clients and MCP servers you use.
