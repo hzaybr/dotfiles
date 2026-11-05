@@ -165,7 +165,6 @@ unset key
 [[ ! -f ~/.p10k.zsh ]] || source ~/.p10k.zsh
 
 # Environment variables
-export NVM_DIR="$HOME/.nvm"
 export BUN_INSTALL="$HOME/.bun"
 export ENABLE_LSP_TOOLS=1
 export COPILOT_CUSTOM_INSTRUCTIONS_DIRS="$HOME/.copilot/rules"
@@ -176,10 +175,6 @@ export PATH="$HOME/.local/bin:$HOME/.local/share/nvim/mason/bin:$HOME/.local/zig
 
 # GitHub token for MCP servers (inherited by child processes; never written to disk)
 command -v gh >/dev/null 2>&1 && export GITHUB_PERSONAL_ACCESS_TOKEN="$(gh auth token 2>/dev/null)"
-
-# NVM
-[ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
-[ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"
 
 # Bun completions
 [ -s "$HOME/.bun/_bun" ] && source "$HOME/.bun/_bun"
